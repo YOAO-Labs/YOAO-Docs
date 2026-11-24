@@ -64,29 +64,20 @@ jobs:
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Open or update sync PR
+      - name: Commit synced generated docs to main
         if: steps.diff.outputs.changed == 'true'
         env:
-          GH_TOKEN: ${{ github.token }}
           SOURCE_REF: ${{ inputs.ref || github.event.client_payload.ref || 'dev' }}
           SOURCE_SHA: ${{ github.event.client_payload.sha || '' }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git checkout -B chore/docs-sync
           git add -A
           git commit -m "chore(docs): sync generated docs from YOAO (${SOURCE_REF})"
-          git push -f origin chore/docs-sync
-          if ! gh pr list --head chore/docs-sync --state open --json number --jq '.[0].number' | grep -q '[0-9]'; then
-            gh pr create \
-              --base main \
-              --head chore/docs-sync \
-              --title "chore(docs): sync generated docs from YOAO" \
-              --body "Automated sync triggered from \`YOAO-Labs/YOAO\` (\`${SOURCE_REF}\` ${SOURCE_SHA})."
-          fi
+          git push origin main
 
-      - name: Trigger Pages deploy when only runtime mirrors changed
-        if: steps.diff.outputs.changed == 'false'
+      - name: Trigger Pages deploy
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh workflow run docs-deploy.yml --ref main
+          SOURCE_REF: ${{ inputs.ref || github.event.client_payload.ref || 'dev' }}
+        run: gh workflow run docs-deploy.yml --ref main -f yoao_ref="${SOURCE_REF}"
