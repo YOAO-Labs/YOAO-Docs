@@ -1,0 +1,50 @@
+name: Docs validation
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      yoao_ref:
+        description: "YOAO-Labs/YOAO git ref to check out"
+        required: false
+        default: "dev"
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Docs site validation
+    runs-on: ubuntu-latest
+    env:
+      YOAO_REPO_PATH: ${{ github.workspace }}/_yoao-source
+      DOCS_BASE: /YOAO-Docs/
+    steps:
+      - name: Checkout YOAO-Docs
+        uses: actions/checkout@v4
+
+      - name: Checkout YOAO source
+        uses: actions/checkout@v4
+        with:
+          repository: YOAO-Labs/YOAO
+          ref: ${{ inputs.yoao_ref || 'dev' }}
+          path: _yoao-source
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run documentation checks
+        run: pnpm check:all
+
+      - name: Build docs site
+        run: pnpm build
