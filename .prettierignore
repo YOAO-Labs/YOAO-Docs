@@ -1,0 +1,13 @@
+.vitepress/cache/
+.vitepress/dist/
+node_modules/
+_yoao-source/
+changelog/
+public/openapi.json
+public/llms.txt
+public/llms-full.txt
+api/guides/_routes.generated.md
+dev/reference/env-vars.md
+user-guide/workbench/hotkeys.generated.md
+user-guide/workbench/settings.generated.md
+pnpm-lock.yaml

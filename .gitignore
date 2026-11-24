@@ -1,0 +1,8 @@
+.vitepress/cache
+.vitepress/dist
+node_modules
+_yoao-source
+changelog/
+public/openapi.json
+public/llms.txt
+public/llms-full.txt
