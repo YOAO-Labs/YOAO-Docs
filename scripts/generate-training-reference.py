@@ -26,6 +26,7 @@ if not ROOT.is_dir():
     )
 sys.path[:0] = [
     str(ROOT / "apps/_shared/training_contract"),
+    str(ROOT / "apps/_shared/task_contract/src"),
     str(ROOT / "apps/_shared/task_contract"),
 ]
 
@@ -268,7 +269,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--check", action="store_true")
     args = parser.parse_args()
-    directory = ROOT / "docs-site/user-guide/online-learning"
+    directory = DOCS_ROOT / "user-guide/online-learning"
     updates = {
         "ultralytics.md": {
             "ultralytics": render("ultralytics", "yolo11n"),
