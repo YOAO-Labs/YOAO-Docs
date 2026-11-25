@@ -137,9 +137,10 @@ psql -X -v ON_ERROR_STOP=1 -U anno_prod_owner -d annotation_production \
 
 ```bash
 psql -X -U anno_prod_owner -d annotation_production \
+  -v grant_recovery=1 \
   -v expected_database=annotation_production -v migration_role=anno_prod_owner \
   -v application_role=anno_prod_app -v dispatch_role=anno_prod_jobs_dispatch \
-  -v publication_role=anno_prod_jobs_publication -f infra/docker/jobs-recovery-grants.sql
+  -v publication_role=anno_prod_jobs_publication -f infra/docker/jobs-grants.sql
 ```
 
 在 `$AAP_PRODUCTION_STATE_DIR` 写两份独立文件，内容为各自 LOGIN 的 `postgresql://` DSN，使用实际共享私网数据库地址和 `annotation_production`，密码按 URL 编码。在 `.env.production` 只设绝对宿主路径，不保存原始 DSN。Compose 只把 claim 文件给 `celery-worker-jobs-recovery`；publication 文件只给恢复者和必要的应用生产／执行进程。恢复 worker 加入生产 Redis 与共享 PostgreSQL 网络，不持有迁移／维护 DSN，也没有共享应用权限回退。Beat 等待其就绪。
@@ -150,8 +151,9 @@ Beat 每小时 UTC 第 5 分钟调度一次 Insights 按日统计刷新，由 `c
 
 ```bash
 psql -X -v ON_ERROR_STOP=1 -U anno_prod_owner -d annotation_production \
+  -v grant_insights_refresh=1 \
   -v expected_database=annotation_production -v migration_role=anno_prod_owner \
-  -v refresh_role=anno_prod_insights_refresh -f infra/docker/insights-refresh-grants.sql
+  -v refresh_role=anno_prod_insights_refresh -f infra/docker/platform-grants.sql
 ```
 
 启动常驻服务：

@@ -23,7 +23,7 @@ last_reviewed: 2026-11-16
 
 ## 部署与权限
 
-先将数据库迁移到当前 head，按既有 module-data 流程安装 owner 辅助授权，再应用共享媒体授权 `infra/docker/assets-media-grants.sql` 和图片 Worker 授权 `infra/docker/assets-image-grants.sql`。Native 私有表归属及保存输出的必要列权限由 `infra/docker/module-data-grants.sql` 安装给 NOLOGIN Assets owner；control/worker/cleanup LOGIN 仍只有有限函数能力，迁移身份单独使用。cleanup 的 11 项能力（五条 lane）沿用 module-data 授权流程；Native 保存输出 lane 不增加直接对象权限。
+先将数据库迁移到当前 head，按既有 module-data 流程安装 owner 辅助授权，再应用共享媒体授权 `infra/docker/assets-grants.sql`（`-v grant_media=1`）和图片 Worker 授权 `infra/docker/assets-grants.sql`（`-v grant_image=1`）。Native 私有表归属及保存输出的必要列权限由 `infra/docker/module-data-grants.sql` 安装给 NOLOGIN Assets owner；control/worker/cleanup LOGIN 仍只有有限函数能力，迁移身份单独使用。cleanup 的 11 项能力（五条 lane）沿用 module-data 授权流程；Native 保存输出 lane 不增加直接对象权限。
 
 `docker-compose.assets-media.yml` 不属于默认 Compose。分离执行选 `ASSETS_IMAGE_EXECUTOR=split` 与 `assets-image-executor` profile，配置 `ASSETS_IMAGES_DATABASE_URL_FILE`、`ASSETS_IMAGES_S3_ACCESS_KEY_FILE`、`ASSETS_IMAGES_S3_SECRET_KEY_FILE`（UID 10005 可读）。`ASSETS_MEDIA_URL/TOKEN` 只选择独立控制；需要时另启 `assets-media-control` profile。显式远程配置失败不回退，三个进程不共用数据库或高权限 S3 身份。
 

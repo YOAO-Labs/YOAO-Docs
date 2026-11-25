@@ -32,7 +32,7 @@ API／普通 worker 的模型执行、后端控制、健康观察、Workspace �
 
 专用 DSN 仅供 Inference owner 进程读取。先应用当前迁移，再以迁移账号运行 `infra/docker/module-data-grants.sql` 与 `infra/docker/lan-production-grants.sql`，最后安装各函数专用 LOGIN 的授权。迁移账号不得成为长期运行凭据。
 
-既有 pipeline、probe、health-observation、health-data、registry-ingress、routing 使用各自 `inference-*-grants.sql`。`infra/docker/inference-owner-grants.sql` 为以下闭合 profile 分别安装 LOGIN：
+既有 pipeline、probe、health-observation、health-data、registry-ingress、routing 使用 `infra/docker/inference-grants.sql` 的对应 capability 分节（`-v grant_<capability>=1`）。其 `grant_owner` 分节（`-v grant_owner=1`）为以下闭合 profile 分别安装 LOGIN：
 
 - 端点打开：`setup`、`health_observation`、`catalog_fallback`、`stats`、`backend_read`、`lifecycle`、`execution`；各账号只能执行 policy 与对应 opener。
 - GPU 自有捕获／打开：`gpu_health_observation`、`gpu_control`；仅持有 policy、capture 和该用途的 opener。
@@ -207,7 +207,7 @@ Workspace 配置 owner 运行在 API 内；需要探测时，API 使用 `INFEREN
 
 `yoao-video-restore` 使用 `--database-url-file`、`--inspect`／`--command-file`／`--status`，只执行专用 `video_restore_step(text,text)`。恢复绑定备份摘要、外部停机／凭据围栏、实际 controller incarnation 和固定 control IDs，原子轮换恢复后的执行权。未知／pending 按原命令查询与恢复，不自动回滚或重跑模型。
 
-应用迁移及 module-data owner 授权后，按 `infra/docker/video-restore-grants.sql` 安装 `yoao_video_restore_operator_client`，变量 `video_restore_operator_role` 指向该专用 LOGIN。其 DSN 只写入操作用户可读的 `0600` 文件。
+应用迁移及 module-data owner 授权后，按 `infra/docker/inference-grants.sql`（`-v grant_video_restore=1`）安装 `yoao_video_restore_operator_client`，变量 `video_restore_operator_role` 指向该专用 LOGIN。其 DSN 只写入操作用户可读的 `0600` 文件。
 
 ```bash
 yoao-video-restore --database-url-file /secure/restore-dsn --inspect

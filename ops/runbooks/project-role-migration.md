@@ -39,15 +39,15 @@ Identity → Workspace → Labeling 顺序安装固定审计关系。以下命�
 
 ```bash
 DB=annotation_prod
-psql -U owner -d "$DB" -v expected_database="$DB" -v migration_role=owner \
+psql -U owner -d "$DB" -v grant_role_audit=1 -v expected_database="$DB" -v migration_role=owner \
   -v identity_owner=identity_code -v consumer_role=role_auditor \
-  -f infra/docker/identity-role-audit-grants.sql
-psql -U owner -d "$DB" -v expected_database="$DB" -v migration_role=owner \
+  -f infra/docker/identity-grants.sql
+psql -U owner -d "$DB" -v grant_role_audit=1 -v expected_database="$DB" -v migration_role=owner \
   -v workspace_owner=workspace_code -v consumer_role=role_auditor \
-  -f infra/docker/workspace-role-audit-grants.sql
-psql -U owner -d "$DB" -v expected_database="$DB" -v migration_role=owner \
+  -f infra/docker/workspace-grants.sql
+psql -U owner -d "$DB" -v grant_role_audit=1 -v expected_database="$DB" -v migration_role=owner \
   -v labeling_owner=labeling_code -v consumer_role=role_auditor \
-  -f infra/docker/labeling-role-audit-grants.sql
+  -f infra/docker/labeling-grants.sql
 psql -U owner -d "$DB" -v audit_database="$DB" <<'SQL'
 GRANT CONNECT ON DATABASE :"audit_database" TO role_auditor;
 GRANT USAGE ON SCHEMA public TO role_auditor;

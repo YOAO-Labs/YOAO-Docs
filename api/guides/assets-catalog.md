@@ -51,9 +51,9 @@ SDK 的 `client.datasets.create(..., idempotency_key=key)` 与 `update(..., idem
 
 ## 数据与凭据
 
-原生入口位于 `yoao_assets_v1`：`list_catalog_datasets`、`get_catalog_dataset`、`list_catalog_items`、`create_catalog_dataset`、`update_catalog_dataset`。冻结 SQL 和 JSON Schema 位于 `apps/api/alembic/sql/0211_dataset_catalog.*`。写入和 `dataset_catalog_operations` 回执共用一项调用方事务；函数不自行提交，不执行 S3 或 broker 操作。
+原生入口位于 `yoao_assets_v1`：`list_catalog_datasets`、`get_catalog_dataset`、`list_catalog_items`、`create_catalog_dataset`、`update_catalog_dataset`。冻结 SQL 位于 `apps/api/alembic/sql/0211_dataset_catalog.sql`，JSON Schema 位于 `apps/api/alembic/sql/assets.contracts.json`（`0211_dataset_catalog.schema.json`）。写入和 `dataset_catalog_operations` 回执共用一项调用方事务；函数不自行提交，不执行 S3 或 broker 操作。
 
-独立制品验收先完成 module-data owner 授权，再运行 `infra/docker/assets-catalog-grants.sql`。其 LOGIN 只能执行目录、关联与空间素材的 29 项公开能力，不获业务表、视图、序列或其他 owner schema 权限。内嵌 API 使用自己的 LOGIN，由当前账号事实和 Workspace／Labeling 投影复核权限；目录回执仍是 owner 私表。
+独立制品验收先完成 module-data owner 授权，再运行 `infra/docker/assets-grants.sql`（`-v grant_catalog=1`）。其 LOGIN 只能执行目录、关联与空间素材的 29 项公开能力，不获业务表、视图、序列或其他 owner schema 权限。内嵌 API 使用自己的 LOGIN，由当前账号事实和 Workspace／Labeling 投影复核权限；目录回执仍是 owner 私表。
 
 目录 S3 身份仅需 `GetObject`：一个 datasets 桶的历史及新来源路径，以及固定 media-cache 桶中的 `thumbnails/`、`videos/`、`playback/`、`image-pyramids/`。不授予列桶、写入、删除或桶管理权限。公开签名 origin 显式配置；不能从请求指定 bucket、endpoint 或任意 key。空间素材准备还使用同一只读身份条件读取有限字节的标定 JSON；固定连接 origin 可通过 `ASSETS_CATALOG_S3_ENDPOINT` 与公开签名地址分开配置。
 

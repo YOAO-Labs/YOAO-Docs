@@ -176,7 +176,7 @@ baseline 与候选修订。Native setter 只写精确配置与事务时间戳，
 或回滚，错绑定回复不能确认整个工作流。能力不增加 CAS、授权检查、提交或回滚。
 
 预建的 `yoao_workspace_project_maintenance_client` 通过
-`infra/docker/workspace-project-maintenance-grants.sql` 获取六项固定业务 owner 执行权，
+`infra/docker/workspace-grants.sql`（`-v grant_project_maintenance=1`）获取六项固定业务 owner 执行权，
 没有私表／列、序列、DDL 或 TEMP 权限；PostgreSQL/public invoker helpers 不属于这项
 业务能力计数。先应用当前迁移和 `module-data-grants.sql`，再按专用脚本设置 `expected_database`、`migration_role`、`workspace_owner` 与 `workspace_project_maintenance_role`。严格回复及 Native／Node／
 真实消费者的限定本地证据见 [ADR-0164](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0164-workspace-transactional-project-maintenance.md)。
@@ -200,7 +200,7 @@ baseline 与候选修订。Native setter 只写精确配置与事务时间戳，
 这两项固定运维写入不提供用户授权、通用字段补丁或提交能力。maintenance LOGIN
 现有六项固定函数；其最初三项合同与快照保持不变。原开发兼容角色继续可运行脚本；
 已应用普通消费者围栏的**可信运维账号**可显式追加
-`infra/docker/workspace-seed-operator-grants.sql`。采用显式最小消费者配置的 API／worker
+`infra/docker/workspace-grants.sql`（`-v grant_seed_operator=1`）。采用显式最小消费者配置的 API／worker
 仍只有32项函数和两张事实视图；不能把运维追加配置用于这些独立账号。
 这不代表开发种子的 Assets 私表操作或其他运维脚本已完成模块提取。
 匹配冷 API 工件的实际种子入口已通过受限凭据、真实 S3、后置失败／回滚、提交后清理
@@ -257,7 +257,7 @@ Project 投影接受名称、类型、owner、状态、AI 标志、工具绑定�
 writer。原 fixture 的不兼容角色、历史属性及未来视频上下文保持原值。
 
 先安装 owner grants 和普通 consumer 围栏，再为受信任测试操作账号追加
-`workspace-seed-operator-grants.sql` 与 `workspace-e2e-fixture-grants.sql`。
+`workspace-grants.sql` 的 `grant_seed_operator` 与 `grant_e2e_fixture` 分节。
 完整 E2E 准备／清理由独立 owner 夹具进程执行，普通业务 HTTP 保持受限；上述固定
 能力仍分别验证调用方事务和权限边界。物理对象收尾前先预检项目退役状态与 Jobs：
 未退役视频、仍有关联或保留 Jobs 记录的项目、以及忙锁返回 409；终态本身不证明物理工作已停止。
@@ -499,7 +499,7 @@ Jobs 与通知保留[原项目范围](./module-data#jobs-保留的项目范围)�
 ## 普通消费者的 SQL 凭据边界
 
 显式最小 API／worker 消费者的 Workspace 本地调用使用既有32个固定函数及两张事实视图。
-`infra/docker/workspace-consumer-grants.sql` 可在 owner 与兼容应用授权后显式应用，
+`infra/docker/workspace-grants.sql`（`-v grant_consumer=1`）可在 owner 与兼容应用授权后显式应用，
 撤销项目、成员、模板、删除／解绑回执和内部状态的表／列权限，以及项目序列、
 私有 schema 创建和内部 helper 权限。固定视图仍为38列项目事实与9列成员事实；
 项目计数继续从 Labeling 的公开关系读取。它不改变请求的连接、提交或权限校验。

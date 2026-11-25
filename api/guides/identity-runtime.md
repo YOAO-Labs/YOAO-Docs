@@ -56,7 +56,7 @@ JSON boolean，返回的 UUID 必须匹配请求。它不验证 JWT、比较先�
 握手先认证再单独读取活动状态，保留“角色变化但账号仍活动”的原行为。
 
 仅此 endpoint 使用可选 `IDENTITY_ACTOR_STATUS_DATABASE_URL(_FILE)` 和
-`read_actor_facts(uuid)`，专用 LOGIN 以 `identity-actor-status-grants.sql` 为准，
+`read_actor_facts(uuid)`，专用 LOGIN 以 `identity-grants.sql`（`-v grant_actor_status=1`）为准，
 不扩大 AUTH 权限。未配置或不可用返回 HTTP 503；非法 JSON 或字段返回
 HTTP 400 `invalid_request`；错误 bearer 返回 401。配置数据源后 `/ready` 也检查它。
 
@@ -130,9 +130,8 @@ key 元数据只有 `id`、`name`、`key_prefix`、`scopes`、`expires_at`、`la
 ## 部署与数据权限
 
 准入、API key 命令与会话执行分别使用专用 LOGIN。精确权限由
-[准入 SQL](https://github.com/YOAO-Labs/ai-annotation-platform/blob/dev/infra/docker/identity-auth-grants.sql)、
-[API key SQL](https://github.com/YOAO-Labs/ai-annotation-platform/blob/dev/infra/docker/identity-keys-grants.sql)和
-[会话 SQL](https://github.com/YOAO-Labs/ai-annotation-platform/blob/dev/infra/docker/identity-sessions-grants.sql)定义。
+[Identity 授权脚本](https://github.com/YOAO-Labs/ai-annotation-platform/blob/dev/infra/docker/identity-grants.sql)的
+`grant_auth`、`grant_keys` 和 `grant_sessions` 分节定义。
 不要给任一 LOGIN 增授私表权限或角色成员关系。缺少 API key 命令 DSN 时准入仍可用，命令返回 503。
 
 登录计数使用独立 Redis 身份，只允许 `login_failed:*` 上的 GET／INCRBY／EXPIRE／DEL 及必要连接命令，不访问业务缓存、broker 或 Pub/Sub。
@@ -530,7 +529,7 @@ API／独立 Identity runtime 的自助与 due operator DSN 分别使用 `IDENTI
 
 已投递和确定拒绝为终态；临时故障、DATA 后断线等结果不明状态继续使用同一挑战、密文与 Message-ID 重试。投递属于至少一次语义，用户可能收到多封相同有效链接。错误 key epoch 保留待投递项，不破坏仍有效的挑战；轮换前应排空旧邮件或保留对应旧 key 的执行器。缺少 SMTP 配置或确定拒绝只使对应重置挑战作废，验证挑战保持有效。
 
-挂载 `IDENTITY_RUNTIME_MAIL_V2_DATABASE_URL_FILE`（`yoao_identity_mail_v2_client`）、`IDENTITY_RUNTIME_MAIL_SETTINGS_DATABASE_URL_FILE`（`yoao_identity_mail_settings_client`）和 `IDENTITY_RUNTIME_RECOVERY_MAIL_KEY_FILE`。两条 DSN 都必须指向业务 outbox 所在库的独立受限 LOGIN，不得使用普通应用、迁移或 owner 登录。精确授权由 `infra/docker/identity-recovery-grants.sql` 和 `infra/docker/identity-invitations-grants.sql` 定义，先应用模块 owner 授权并撤销 PUBLIC TEMP。可配 `IDENTITY_MAIL_SMTP_*` 环境 fallback；Settings 配置优先。Sender 不挂 JWT signer、控制 bearer 或生产者数据库凭据。
+挂载 `IDENTITY_RUNTIME_MAIL_V2_DATABASE_URL_FILE`（`yoao_identity_mail_v2_client`）、`IDENTITY_RUNTIME_MAIL_SETTINGS_DATABASE_URL_FILE`（`yoao_identity_mail_settings_client`）和 `IDENTITY_RUNTIME_RECOVERY_MAIL_KEY_FILE`。两条 DSN 都必须指向业务 outbox 所在库的独立受限 LOGIN，不得使用普通应用、迁移或 owner 登录。精确授权由 `infra/docker/identity-grants.sql` 的 `grant_recovery` 和 `grant_invitations` 分节定义，先应用模块 owner 授权并撤销 PUBLIC TEMP。可配 `IDENTITY_MAIL_SMTP_*` 环境 fallback；Settings 配置优先。Sender 不挂 JWT signer、控制 bearer 或生产者数据库凭据。
 
 内嵌 API 生产者使用同一 `IDENTITY_RECOVERY_MAIL_KEY(_FILE)`；独立 issuer 由 overlay 挂载同一 Fernet 文件。切换时停止旧发送器，保留待投递行和原密钥，确认新 sender 的 `/ready` 与实际投递。不回填 SQL，也不轮换 token。授权与配置见[生产邮件部署](/ops/deploy/docker-compose#production-mail)；旧环境若由 JWT 密钥派生 Fernet key，按[旧拓扑升级门禁](/ops/upgrade-guide#split-topology-upgrade)迁移密钥。V1 worker、SQL 和 LOGIN 仅用于独立契约验收。
 

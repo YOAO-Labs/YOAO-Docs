@@ -337,7 +337,7 @@ ORM DELETE evaluator 同步身份缓存，因此已有、脏、过期对象及�
 
 `apps/notifications/src/yoao_notifications/preferences.policy.json` 是「**用户可在设置页配置**」的类型与默认 toast 合同。API 使用此名单做公开请求校验，0311 Notifications owner 在 PostgreSQL 内保留同一有序策略，并自行计算新行默认值；PATCH 不接受调用方传入默认值。Python contract 测试逐项比较 JSON 与冻结 SQL，Node peer 则直接调用同一 owner 函数。新增类型时更新该策略、后续线性 Alembic owner SQL 与前端设置页标签：
 
-`infra/docker/notification-preferences-grants.sql` 撤销指定 API LOGIN 与 `PUBLIC` 对偏好私表的直接权限；`notification-append-grants.sql` 安装偏好、追加、已读和删除四项固定能力。`notifications-read-grants.sql` 改授公开通知关系 SELECT；普通工作树和 LAN 授权源也关闭三张 Notifications 私表及列权限，publisher 仍使用专用固定函数。先部署匹配 API／worker 工件并排空旧私表消费者，再安装严格授权；回退也须同时匹配代码、关系和授权。
+`infra/docker/notifications-grants.sql` 的 `grant_preferences` 分节撤销指定 API LOGIN 与 `PUBLIC` 对偏好私表的直接权限；`grant_append` 分节安装偏好、追加、已读和删除四项固定能力；`grant_read` 分节改授公开通知关系 SELECT。普通工作树和 LAN 授权源也关闭三张 Notifications 私表及列权限，publisher 仍使用专用固定函数。先部署匹配 API／worker 工件并排空旧私表消费者，再安装严格授权；回退也须同时匹配代码、关系和授权。
 
 - `bug_report.commented`
 - `bug_report.reopened`

@@ -42,7 +42,7 @@ Task 列表的原始文件引用不依赖 S3 HEAD，避免存储短时不可用�
 
 ## 部署与范围
 
-默认 Celery 与独立执行器的角色配置见[媒体执行角色](/ops/deploy/docker-compose#media-executor-provisioning)。启用独立控制或执行前，先应用迁移和模块 owner 授权，再按 `infra/docker/assets-media-grants.sql` 安装分别使用的控制和执行 LOGIN。专用文件按 `docker-compose.assets-media.yml` 挂载。可选 worker 仍可选择 `MEDIA_PROBE_URL`，远程探测故障不回退。
+默认 Celery 与独立执行器的角色配置见[媒体执行角色](/ops/deploy/docker-compose#media-executor-provisioning)。启用独立控制或执行前，先应用迁移和模块 owner 授权，再按 `infra/docker/assets-grants.sql`（`-v grant_media=1`）安装分别使用的控制和执行 LOGIN。专用文件按 `docker-compose.assets-media.yml` 挂载。可选 worker 仍可选择 `MEDIA_PROBE_URL`，远程探测故障不回退。
 
 `docker-compose.assets-media.yml` 提供 `assets-video-executor`、`assets-image-executor`、`assets-media-control` 三个显式 profile。开启某个执行 profile 前，先停止旧领取、确认在途操作已排空，再将对应 `*_EXECUTOR` 在 API 和相关 Worker 统一改为 `split`；该值会关闭该 lane 的 Celery 领取，独立容器拒绝 `celery` 配置。独立执行器不需要控制容器或 broker。常驻 Celery 两项执行各需专用窄 LOGIN，通过 `ASSETS_CELERY_VIDEO_DATABASE_URL[_FILE]`、`ASSETS_CELERY_IMAGE_DATABASE_URL[_FILE]` 安装。API 与 Beat 不挂载这些数据库凭据。
 

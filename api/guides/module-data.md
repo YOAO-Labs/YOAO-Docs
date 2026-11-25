@@ -48,7 +48,7 @@ COMMIT;
 ```
 
 函数返回 `aap-task-append/v1` JSON，完整 schema 是
-`apps/api/alembic/sql/0191_task_append.schema.json`，所有对象拒绝未知字段：
+`apps/api/alembic/sql/labeling.contracts.json`（`0191_task_append.schema.json`），所有对象拒绝未知字段：
 
 | 字段                         | 含义                                                     |
 | ---------------------------- | -------------------------------------------------------- |
@@ -337,7 +337,7 @@ workflow LOGIN 不能领取或确认 outbox，也不能读取其私有表。
 保持。`DatasetUnlinkPostgresData(connection)` 使用 `yoao_workspace_dataset_unlink_client`
 调用同一两项 Native 函数，只借用已开启事务，不自行提交、回滚或关闭连接。预览也会
 获取权限锁，因此不能使用 READ ONLY 事务。该账号没有私表／列、序列、DDL 或 TEMP
-权限；授权脚本为 `infra/docker/workspace-dataset-unlink-grants.sql`。
+权限；授权脚本为 `infra/docker/workspace-grants.sql`（`-v grant_dataset_unlink=1`）。
 
 原始 JSON 拒绝重复键／非有限数，Python UUID／tuple 值继续支持。Node 等客户端处理
 大于安全整数范围的 audit ID 时，应保留原始 JSON 或使用精确整数解码；回执字段仍是
@@ -454,7 +454,7 @@ Item、Dataset 计数、Labeling append 回执、ZIP Scene/frame 变更、最终
 
 ZIP 的 `read_dataset_ingest_layout` 以 UUID keyset 分页返回至多 500 个 detached Item，并带有权威 snapshot digest/count；`finish_dataset_ingest` 会在写 Scene 与 frame assignment 前重验快照、计划归属和完整结算状态。扫描不调用这两项布局/Scene 能力。媒体 delivery claim 在派发前保存租约，ack 需校验同一活动 lease token 与当前 delivery target；此 outbox 提供可重试的 at-least-once 派发，不承诺 exactly-once。
 
-当前 native JSON 合同见 `apps/api/alembic/sql/0419_dataset_ingest_authority.schema.json`；纯 Python HTTP/wire 合同见 `apps/assets-source/src/yoao_assets_source/ingest_contract.schema.json`，部署时应用完整 Alembic 迁移链。这六项入库能力属于 Source LOGIN 当前的 42 项能力；`claim_dataset_source_ingest_delivery` 和 `complete_dataset_source_ingest_delivery` 仅供 API maintenance relay 领取/确认派发，不授予 Source LOGIN。图像来源验证与作业受理的三个能力由 Source LOGIN 使用，详见下文。交付收据表示 broker 接受，不表示媒体已执行。
+当前 native JSON 合同见 `apps/api/alembic/sql/assets.contracts.json`（`0419_dataset_ingest_authority.schema.json`）；纯 Python HTTP/wire 合同见 `apps/assets-source/src/yoao_assets_source/ingest_contract.schema.json`，部署时应用完整 Alembic 迁移链。这六项入库能力属于 Source LOGIN 当前的 42 项能力；`claim_dataset_source_ingest_delivery` 和 `complete_dataset_source_ingest_delivery` 仅供 API maintenance relay 领取/确认派发，不授予 Source LOGIN。图像来源验证与作业受理的三个能力由 Source LOGIN 使用，详见下文。交付收据表示 broker 接受，不表示媒体已执行。
 
 ## 存储连接器管理
 
@@ -491,7 +491,7 @@ Source 在 `public.storage_connection_operations` 中保存不可变幂等回执
 
 每个写能力都接收操作 UUID；重放必须匹配原操作和请求。`dataset_operator_operations` 存储不可变回执且没有 live Dataset/Item 外键。批量追加/更新最多 500 项，请求 JSON 最多 8 MiB。读取每页最多 500 项，Item 记录 JSON 最多 15 MiB，完整响应最多 16 MiB；调用方跨页核对稳定摘要、总数、顺序、游标和完成标记，因此完整读取不受单页上限截断。source snapshot 是 opaque CAS 值，由 Assets 持有并在 patch 时重验；更新保留 Scene/frame、标定和无关 metadata，只改请求字段，尺寸只在目标相机尺寸不完整时成对回填。
 
-本地导入器通过 `AssetsOperatorGateway` 复用调用方 SQL Session，不经 Source HTTP，也不自行提交。nuScenes 与 Labeling、Workspace 和空间写入共用外层事务。SQL 回滚不撤销已写的对象。为独立受限 operator 安装权限时，先应用 common owner、nuScenes 所需 Catalog 及部署使用的 Source／Importer grants，再运行 `infra/docker/assets-operator-grants.sql`，其中 `asset_operator_role` 指向 `yoao_asset_operator_client`。该 LOGIN 不替代完整跨 owner 导入所需的调用方权限。合同见 [ADR-0104](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0104-operator-source-registration.md)。
+本地导入器通过 `AssetsOperatorGateway` 复用调用方 SQL Session，不经 Source HTTP，也不自行提交。nuScenes 与 Labeling、Workspace 和空间写入共用外层事务。SQL 回滚不撤销已写的对象。为独立受限 operator 安装权限时，先应用 common owner、nuScenes 所需 Catalog 及部署使用的 Source／Importer grants，再运行 `infra/docker/assets-grants.sql`（`-v grant_operator=1`），其中 `asset_operator_role` 指向 `yoao_asset_operator_client`。该 LOGIN 不替代完整跨 owner 导入所需的调用方权限。合同见 [ADR-0104](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0104-operator-source-registration.md)。
 
 图片导入的 `yoao_asset_operator_client` 另可执行 Identity 的 `read_first_seed_account()`，只返回现有账号的 ID 和邮箱，不筛选角色或启用状态；多个账号时不保证选择顺序。该能力不授予用户表或账号 profile 关系的读取权限，也不改变调用方事务。
 
@@ -518,7 +518,7 @@ Assets 只通过 Labeling 当前相机/共享与受理范围、Workspace 当前�
 ## 受理视频输入与帧计划
 
 `aap-assets-video-input-execution/v1` 定义 24 项原生能力，完整参数与值模型固定在
-`apps/api/alembic/sql/0225_video_inputs.schema.json`。它冻结完整任务清单、原始视频对象身份、采样策略和所选帧时间；成员全部准备完成后才封存结果摘要。
+`apps/api/alembic/sql/assets.contracts.json`（`0225_video_inputs.schema.json`）。它冻结完整任务清单、原始视频对象身份、采样策略和所选帧时间；成员全部准备完成后才封存结果摘要。
 
 | 调用方        | 能力数 | 范围                                                |
 | ------------- | -----: | --------------------------------------------------- |
@@ -537,7 +537,7 @@ Labeling 的源检查必须和当前 Task/批次/编辑锁、实际执行作业�
 
 ## 普通批量结果检查点
 
-`aap-preannotation-results/v1` 用单个 JSONB 请求和封闭成功／错误信封提供十七项能力。冻结模式见 `apps/api/alembic/sql/0231_preannotation_results.schema.json`，可独立安装的客户端、编解码器和 CLI 位于 `apps/preannotation-results`。它使用标准 PostgreSQL 传输，无需交换 Python Session 或 ORM 对象。
+`aap-preannotation-results/v1` 用单个 JSONB 请求和封闭成功／错误信封提供十七项能力。冻结模式见 `apps/api/alembic/sql/labeling.contracts.json`（`0231_preannotation_results.schema.json`），可独立安装的客户端、编解码器和 CLI 位于 `apps/preannotation-results`。它使用标准 PostgreSQL 传输，无需交换 Python Session 或 ORM 对象。
 
 | 所有者   | 执行角色可调用                                                                                                       | 仅业务写入方可调用                       |
 | -------- | -------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
@@ -631,7 +631,7 @@ Labeling 登录角色只允许执行 `yoao_labeling_v1.video_writer_step(text,te
 owner，并将操作限制为 inspect、read window、固定 guard 和固定 finish；视频
 LOGIN 没有 Jobs 或 Labeling 表权限，也没有任意 Jobs RPC。安装先应用当前迁移和
 `infra/docker/module-data-grants.sql`，再应用
-`infra/docker/labeling-video-writer-grants.sql`。
+`infra/docker/labeling-grants.sql`（`-v grant_video_writer=1`）。
 
 完成命令不信任 worker 再传的一份候选全量列表。owner 从 Jobs 账本按冻结计划
 逐窗读取 manifest 与原始 UTF-8 payload 文本，验证原始字节摘要、计划身份、
@@ -662,7 +662,7 @@ Mask 独立验证、全量备份恢复、受限镜像与容量尚未资格验证
 
 `yoao_video_restore_operator_client` 只执行 Inference 的
 `yoao_inference_routing_v1.video_restore_step(text,text)`，没有原表、DDL 或 TEMP 权限。
-专用授权脚本为 `infra/docker/video-restore-grants.sql`。固定命令与结果分别使用
+专用授权脚本为 `infra/docker/inference-grants.sql`（`-v grant_video_restore=1`）。固定命令与结果分别使用
 `aap-video-restore/v1`、`aap-video-restore-data/v1`，冻结 schema 位于
 `0284_video_restore.schema.json`。该操作不属于普通 API 或 routing listener。
 
@@ -767,7 +767,7 @@ flush、最后完整 flush、审计及提交顺序保持。
 
 参数依次为 actor UUID、平台角色快照、状态、开放 kind、可空项目 UUID、可空搜索模式，分页函数另接收 limit／offset。调用方先完成 Identity 认证与当前活动状态读取，再分别执行 page 和 total；两个语句保留各自快照，不合并查询或提交事务。成员资格在每条语句内通过 Identity 当前事实与 Workspace 能力验证，预查角色仍控制原有 super-admin／项目管理员分支。当前／保留项目范围、reviewer 导出权限、六项 JSONB 文本搜索、autoflush 与 ORM identity 行为保持。
 
-`yoao_jobs_list_query_client` 是仅持两项函数权限的独立 LOGIN，没有 Jobs 私表、内部 helper、Identity 表／函数、DDL、TEMP 或角色成员权限。普通 API 的其余 Jobs 操作仍需原有私表权限，本操作不提前撤销。迁移和普通 owner 授权后，使用 `infra/docker/jobs-list-query-grants.sql` 安装严格客户端权限；工作区与 LAN 的普通 API 授权也包含这两个公开函数。
+`yoao_jobs_list_query_client` 是仅持两项函数权限的独立 LOGIN，没有 Jobs 私表、内部 helper、Identity 表／函数、DDL、TEMP 或角色成员权限。普通 API 的其余 Jobs 操作仍需原有私表权限，本操作不提前撤销。迁移和普通 owner 授权后，使用 `infra/docker/jobs-grants.sql`（`-v grant_list_query=1`）安装严格客户端权限；工作区与 LAN 的普通 API 授权也包含这两个公开函数。
 
 schema 与 SQL 随 `apps/jobs` 分发，独立 Node 消费者位于 `apps/jobs/conformance/node/`。实现、消费者及限定验收状态分别见[模块台账](/dev/concepts/module-deployment#jobs-list-query-owner)，这不代表完整 Jobs 已独立运行。
 

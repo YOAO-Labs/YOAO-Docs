@@ -92,7 +92,7 @@ Labeling 的 `aap-labeling-mask-gc/v1` 以原生每键代次、删除意图与�
 ## 手动回收运行入口 {#mask-gc-operator}
 
 先迁移至当前 head，再应用 `module-data-grants.sql` 和
-`labeling-mask-gc-data-grants.sql`。独立 `yoao_labeling_mask_gc_client` 仅取六项
+`labeling-grants.sql`（`-v grant_mask_gc_data=1`）。独立 `yoao_labeling_mask_gc_client` 仅取六项
 回收函数；清理字节进程只持有独立的 S3 cleanup 身份。准备私有环境文件和只读
 secret 文件，由实际容器 UID 可读，宿主父目录权限设为 `0700`：
 

@@ -96,7 +96,7 @@ Compose 的数据库 `_FILE` 指向宿主 secret 文件；归档访问 key 的�
 数据库和调用方已开启的不可变性维护标记，只匹配原 seed 路径与共享标记或精确 namespace。
 它沿用调用方事务、回滚与错误传播，不提供普通审计历史删除能力，也不增加 CLI 子命令。
 
-独立维护 LOGIN 使用 `infra/docker/audit-maintenance-grants.sql`，仅开放一个函数。
+独立维护 LOGIN 使用 `infra/docker/audit-grants.sql`（`-v grant_maintenance=1`），仅开放一个函数。
 原追加、查询、读取专用授权继续保留。升级与回退须匹配代码和 owner 授权配置；不通过
 修改 Alembic revision 伪装迁移完成。维护 LOGIN、快照锁与回滚和夹具范围已通过定向验证。
 独立维护 CLI 的 ARM64 镜像、分离归档凭据、上传后进程丢失与回滚、孤儿对象接管及

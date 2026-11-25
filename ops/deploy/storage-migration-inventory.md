@@ -138,7 +138,7 @@ apps/api/.venv/bin/python scripts/storage_source_fence.py status \
 
 `scripts/finalize_storage_migration.py` 把实际原生封闭与应用窗口、新清单及 B5 后继复制绑定。命令由可信部署运维执行，`STORAGE_MIGRATION_CONTROL_DATABASE_URL` 只在本地命令进程提供专用控制 LOGIN；不回退到普通应用或迁移 owner 的连接。`scripts/cutover_storage_migration.py` 使用同一控制身份。原生凭据仍只用上述两个操作进程变量；API 与 Worker 不需要 Docker 权限。`--actor-id` 为当前有效超级管理员 UUID。命令不接受上传的证明文件；bind／seal 不发布业务读取路由，原件映射须另外显式发布。
 
-先按单独部署策略建立 `NOINHERIT`、无角色成员关系的控制 LOGIN，再由迁移 owner 使用 `infra/docker/storage-migration-control-grants.sql` 安装授权（`expected_database`、`migration_role`、`application_role`、`storage_migration_control_role`）。它只拥有明确的可信控制事务所需权限；普通 API／Worker 不持有该口令，控制角色也不读取连接器密文。已登记位置的实际对象操作仍归 Assets Source。
+先按单独部署策略建立 `NOINHERIT`、无角色成员关系的控制 LOGIN，再由迁移 owner 使用 `infra/docker/platform-grants.sql`（`-v grant_storage_migration_control=1`）安装授权（`expected_database`、`migration_role`、`application_role`、`storage_migration_control_role`）。它只拥有明确的可信控制事务所需权限；普通 API／Worker 不持有该口令，控制角色也不读取连接器密文。已登记位置的实际对象操作仍归 Assets Source。
 
 1. 先完成初次复制及九用途处理评审，开启以该批次为父的迁移窗口，并停止登记访问。待旧任务与实际许可全部收尾后，实际执行原生 `seal`。
 2. 选定一个新的最终核验 UUID，在同一私有配置与状态上执行 `bind`。它先持久保存应用绑定责任，再核对数据库、源／目标和窗口，递增窗口修订；之后生成的新任务会固定此修订。

@@ -377,15 +377,16 @@ CREATE ROLE yoao_jobs_dispatch_relay_client LOGIN NOINHERIT NOSUPERUSER NOCREATE
 CREATE ROLE yoao_jobs_publication_client LOGIN NOINHERIT NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS;
 ```
 
-共享实例使用目标部署独占的角色名及凭据。目标库须有独立普通 `application_role`（不是 owner 或超级用户）并撤销 PUBLIC 的 TEMP。新普通库可复用[局域网普通账号授权](./lan-production#lan-cold-start)中的 `lan-production-grants.sql`，替换为自己的数据库、迁移／应用及 Assets cleanup 角色，然后安装 Jobs 授权。已使用 Jobs NOLOGIN owner 的模块库复用 `jobs-dispatch-grants.sql` 和 `module-execution-grants.sql`，不混用两种 profile。
+共享实例使用目标部署独占的角色名及凭据。目标库须有独立普通 `application_role`（不是 owner 或超级用户）并撤销 PUBLIC 的 TEMP。新普通库可复用[局域网普通账号授权](./lan-production#lan-cold-start)中的 `lan-production-grants.sql`，替换为自己的数据库、迁移／应用及 Assets cleanup 角色，然后安装 Jobs 授权。已使用 Jobs NOLOGIN owner 的模块库复用 `jobs-grants.sql`（`-v grant_dispatch=1`）和 `platform-grants.sql`（`-v grant_module_execution=1`），不混用两种 profile。
 
 普通库使用下例。设 `AAP_DB`、`AAP_MIGRATION_ROLE`、`AAP_APP_ROLE` 为本部署的数据库、迁移 LOGIN、普通应用 LOGIN。`psql` 连接到准确的实例，认证通过交互或私有 `PGPASSFILE`；整栈内置数据库没有宿主端口，可将开头的 `psql` 改成 `stack exec -T postgres psql`：
 
 ```bash
 psql -X -U "$AAP_MIGRATION_ROLE" -d "$AAP_DB" \
+  -v grant_recovery=1 \
   -v expected_database="$AAP_DB" -v migration_role="$AAP_MIGRATION_ROLE" \
   -v application_role="$AAP_APP_ROLE" -v dispatch_role=yoao_jobs_dispatch_relay_client \
-  -v publication_role=yoao_jobs_publication_client < infra/docker/jobs-recovery-grants.sql
+  -v publication_role=yoao_jobs_publication_client < infra/docker/jobs-grants.sql
 ```
 
 在 Compose 环境设 `JOBS_DISPATCH_DATABASE_URL_FILE` 与 `JOBS_PUBLICATION_DATABASE_URL_FILE` 为两个绝对宿主路径。每个文件只写一行 `postgresql://` DSN（数据库名和 URL 编码后的密码与上述角色一致；不要写 `postgresql+asyncpg://`）。Compose 内置数据库使用 `postgres:5432`，LAN 使用核实的私网主机名；宿主 API 需要宿主可达地址。文件置于仓库和构建上下文外，只允许相应进程读取。claim URL 只挂载到恢复 worker；publication URL 可给实际业务 producer／消费者和恢复 worker。Beat 不读取两份文件；两个 LOGIN 绝不能用 API／维护或迁移 DSN 代替。
@@ -398,14 +399,16 @@ psql -X -U "$AAP_MIGRATION_ROLE" -d "$AAP_DB" \
 
 ```bash
 psql -X -U "$AAP_MIGRATION_ROLE" -d "$AAP_DB" \
+  -v grant_media=1 \
   -v expected_database="$AAP_DB" -v migration_role="$AAP_MIGRATION_ROLE" \
   -v assets_owner="$AAP_MIGRATION_ROLE" -v asset_media_worker_role=yoao_asset_media_worker_client \
-  < infra/docker/assets-media-grants.sql
+  < infra/docker/assets-grants.sql
 
 psql -X -U "$AAP_MIGRATION_ROLE" -d "$AAP_DB" \
+  -v grant_image=1 \
   -v expected_database="$AAP_DB" -v migration_role="$AAP_MIGRATION_ROLE" \
   -v assets_owner="$AAP_MIGRATION_ROLE" -v asset_image_worker_role=yoao_asset_image_worker_client \
-  < infra/docker/assets-image-grants.sql
+  < infra/docker/assets-grants.sql
 ```
 
 不启动私有控制端就不用 `asset_media_control_role`。以上不会移交函数或改写 Jobs 所有权，不为默认单体运行 `module-data-grants.sql`。已有 Assets NOLOGIN owner 的库用相同脚本明确指定实际 `assets_owner`，并沿用原模块授权。文件设为 `ASSETS_CELERY_VIDEO_DATABASE_URL_FILE`、`ASSETS_CELERY_IMAGE_DATABASE_URL_FILE`，同库且绑定上述独立角色。视频只挂通用、GPU、CPU worker；图片还挂图片 worker。API、Beat、Jobs 恢复、维护、导出及 GPU 控制 worker 不得到执行 DSN。
@@ -546,7 +549,7 @@ beat、所有 worker 和独立 owner 的数据库／对象存储写入凭据，�
 
 隔离目标可显式使用 [离线视频恢复 operator](/api/guides/inference-runtime#离线视频恢复-operator)
 协调 Jobs／Inference 执行权交接；该入口不随普通服务启动。先应用迁移、owner 授权及专用
-`video-restore-grants.sql`，只将函数专用 LOGIN 文件交给 operator。目标业务写入保持关闭，
+`inference-grants.sql`（`-v grant_video_restore=1`），只将函数专用 LOGIN 文件交给 operator。目标业务写入保持关闭，
 以固定 restore ID、备份摘要和外部围栏记录执行；活跃请求或结果不明时重复同一命令。
 完成记录确认两类权威已轮换，并按实际 backend 当前 epoch 全局 drain／退休后，才允许
 普通 claim 取得新代次。backend incarnation、冻结模型身份与精确输入版本仍必须匹配；

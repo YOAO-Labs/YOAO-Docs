@@ -81,9 +81,9 @@ S3 身份只拥有 import 桶 `dataset-uploads/*` 的 Get/Put、datasets 桶历�
 
 ## 运行与回退
 
-先迁移并安装 `infra/docker/assets-source-grants.sql` 的控制 LOGIN 和[保存 I/O 的独立授权与私网 token](/ops/deploy/docker-compose#source-registered-io)，再启动 `docker-compose.assets-source.yml`；需要 Native 签名时叠加 `docker-compose.assets-native.yml`。API 的连接管理令牌、普通读写令牌、导入租约令牌、准确版本核验令牌及 Native 签名分别配置。`/ready` 只证明 Source 宿主就绪。
+先迁移并安装 `infra/docker/assets-grants.sql`（`-v grant_source=1`）的控制 LOGIN 和[保存 I/O 的独立授权与私网 token](/ops/deploy/docker-compose#source-registered-io)，再启动 `docker-compose.assets-source.yml`；需要 Native 签名时叠加 `docker-compose.assets-native.yml`。API 的连接管理令牌、普通读写令牌、导入租约令牌、准确版本核验令牌及 Native 签名分别配置。`/ready` 只证明 Source 宿主就绪。
 
-控制 LOGIN 的 psql 参数由 `assets-source-grants.sql` 声明。准备 overlay 所需私有文件后，按目标部署的 Compose 项目和文件链启动：
+控制 LOGIN 的 psql 参数由 `assets-grants.sql` 的 `grant_source` 分节声明。准备 overlay 所需私有文件后，按目标部署的 Compose 项目和文件链启动：
 
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.assets-source.yml \
@@ -140,7 +140,7 @@ Importer 保留自身有限等待期限。初始错误或内容不可信的回�
 
 内建目标由 Importer 的受限身份写入，Source 在原 `dataset-sources/*` 范围用 `GetObjectVersion` 验证。已登记 S3 目标的连接凭据仅由 Source 打开，用于保存前缀内的条件复制与准确版本回读；Importer 只持当前租约的窄令牌。缺少准确版本、回执或 `GetObjectVersion` 权限即失败，不自动授权，也不改读当前版本。
 
-媒体和通知沿用既有执行方，持久 outbox 由 API maintenance relay 领取并在派发成功后确认。队列投递可能重复；确认代表 broker 接受，不代表媒体计算完成。先按[同库迁移约束](./module-data#持久连接器导入)排空或取消旧导入，应用迁移、owner grants、`assets-import-grants.sql` 和 Source 保存 I/O 授权。Source 就绪后，复用目标部署项目与环境文件，追加 Importer overlay：
+媒体和通知沿用既有执行方，持久 outbox 由 API maintenance relay 领取并在派发成功后确认。队列投递可能重复；确认代表 broker 接受，不代表媒体计算完成。先按[同库迁移约束](./module-data#持久连接器导入)排空或取消旧导入，应用迁移、owner grants、`assets-grants.sql`（`-v grant_import=1`）和 Source 保存 I/O 授权。Source 就绪后，复用目标部署项目与环境文件，追加 Importer overlay：
 
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.assets-source.yml \

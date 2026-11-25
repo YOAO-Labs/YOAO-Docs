@@ -24,7 +24,7 @@ API 的 consumer 配置。`yoao_identity_fixture_v1.account_profiles` 只提供�
 原始约束错误和行锁等待保持。SQL 层不新增账号授权、审计、回执、重试或提交。
 
 路由挂载及每请求的环境／开关／数据库守卫保持。可信 operator 在普通 Identity 围栏
-后通过 `identity-e2e-fixture-grants.sql` 追加这些能力，仍无 Identity 私表及列权限；
+后通过 `identity-grants.sql`（`-v grant_e2e_fixture=1`）追加这些能力，仍无 Identity 私表及列权限；
 普通 API 不能追加此配置。其他领域的可信测试写入及对象权限需分别提供。配置与
 实际资格见[模块台账](/dev/concepts/module-deployment#identity-门控-e2e-夹具)。
 
@@ -44,7 +44,7 @@ API 的 consumer 配置。`yoao_identity_fixture_v1.account_profiles` 只提供�
 邀请的项目角色通过整行 JSON 的单字段表达式读取：旧库缺列时为 NULL，列加入后
 自动读到新值。整行 JSON 和 email／token 不返回给消费者。
 
-维护者显式运行 `infra/docker/identity-role-audit-grants.sql`，验证目标库及迁移角色、
+维护者显式运行 `infra/docker/identity-grants.sql`（`-v grant_role_audit=1`），验证目标库及迁移角色、
 既有非 LOGIN Identity owner 和受限审计 LOGIN。该步骤兼容普通 Identity schema
 出现之前的数据库，不属于审计 CLI 的只读事务，也不修改 Alembic revision。普通
 Identity API 仍只有两视图／五函数；审计 LOGIN 仅追加三个审计关系的 SELECT，并
@@ -68,7 +68,7 @@ Identity API 仍只有两视图／五函数；审计 LOGIN 仅追加三个审计
 负责；规模种子把 Workspace annotator 成员事实组成 UUID 数组，在同一 SQL 语句中传给
 第二项能力。`seed_scale.py` 在其受限运行账号上执行这两次选择，夹具 owner 通道
 仍负责私有台账和写入；选择权限缺失时不回退 owner。可信运行账号的追加配置是
-`identity-scale-seed-grants.sql`；普通消费者仍是既有两视图／五函数，无法执行选择能力。
+`identity-grants.sql`（`-v grant_scale_seed=1`）；普通消费者仍是既有两视图／五函数，无法执行选择能力。
 不能拆成跨连接的先读候选、再选账号。
 
 图片导入只复用既有公开账号事实，无序选择任意首账号，不增加角色或启用条件。
@@ -85,7 +85,7 @@ Identity API 仍只有两视图／五函数；审计 LOGIN 仅追加三个审计
 迁移新增的函数独立于原 provisioning 合同。可信 `yoao_identity_provisioning_client` 当前
 具有三项固定 Identity 函数；普通 Identity API 消费者仍只有两张视图与五项函数。
 已应用普通围栏的可信种子运维连接可通过
-`infra/docker/identity-seed-operator-grants.sql` 追加精确查询与 persona 创建能力；
+`infra/docker/identity-grants.sql`（`-v grant_seed_operator=1`）追加精确查询与 persona 创建能力；
 该配置拒绝普通 API 账号、角色继承和 User 私表／列权限。
 主种子的限定验收见[模块台账](/dev/concepts/module-deployment#主种子账号与演示成员)。
 
@@ -106,6 +106,6 @@ Import 只查精确 email `admin`。已有任意 row 都原样复用，包括 in
 
 其它环境（包括 staging）沿用 `admin`／`超级管理员`／bcrypt(`123456`)／`super_admin`／active／`offline`／null `email_verified_at`，不写 Audit。Importer 对 Assets、Workspace、Labeling 的 SQL 提交/回滚与账号 provisioning 保持一个事务，失败回滚全部业务行。
 
-Migration 0252 只增加只读 `read_provisioning_account(text)` 和 mutable `create_provisioning_account(jsonb)` 两个 Identity 函数。当前运维账号权限以 `identity-provisioning-grants.sql` 与 `identity-seed-operator-grants.sql` 为准。Audit 由固定 `yoao_audit_v1.record_identity_bootstrap_admin(uuid,text,text)` capability 写入，Identity 没有 Audit table 权限。Native SQL constraint／duplicate 错误原样抛出；相同 email 并发创建仍以 `23505` 中止事务，无 conflict-ignore、重试或 adapter rollback。读路径遵循 `autoflush/no_autoflush`；create 即使在 `no_autoflush` 下也显式 flush caller pending work。没有新 runtime DSN、setting 或独立服务；verifier-only `AAP_MODULE_DATA_IDENTITY_PROVISIONING_URL` 不是应用配置。
+Migration 0252 只增加只读 `read_provisioning_account(text)` 和 mutable `create_provisioning_account(jsonb)` 两个 Identity 函数。当前运维账号权限以 `identity-grants.sql` 的 `grant_provisioning` 与 `grant_seed_operator` 分节为准。Audit 由固定 `yoao_audit_v1.record_identity_bootstrap_admin(uuid,text,text)` capability 写入，Identity 没有 Audit table 权限。Native SQL constraint／duplicate 错误原样抛出；相同 email 并发创建仍以 `23505` 中止事务，无 conflict-ignore、重试或 adapter rollback。读路径遵循 `autoflush/no_autoflush`；create 即使在 `no_autoflush` 下也显式 flush caller pending work。没有新 runtime DSN、setting 或独立服务；verifier-only `AAP_MODULE_DATA_IDENTITY_PROVISIONING_URL` 不是应用配置。
 
 非锁定 Project authority 查询复用 `read_actor_facts`；写入复用[账号事实锁](./identity-runtime#调用方事务内的账号事实锁)。既有锁序、等待和 HTTP 错误映射不变。需要刷新 Project ORM 的调用方仍须刷新；仅检查 active 的守卫不增加 role 检查。证据与精确默认见 [ADR-0132](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0132-identity-operational-provisioning-and-authority-reads.md)。

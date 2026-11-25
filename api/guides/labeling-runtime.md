@@ -35,7 +35,7 @@ Labeling；其未提交变化可被同一连接读取，回滚时一起撤销。
 `class_query_policy()`、`class_counts(uuid)`、`attribute_rows(uuid)` 三项执行权限，
 不获得 Labeling 私表、列权限或 owner 身份。无需给 API 挂载类别查询 DSN 或 bearer。
 
-`aap-labeling-class-query/v1`、便携 PostgreSQL／HTTP 提供方及其 `labeling-class-query-grants.sql`
+`aap-labeling-class-query/v1`、便携 PostgreSQL／HTTP 提供方及其 `labeling-grants.sql`（`-v grant_class_query=1`）
 三函数验收登录仍供独立合同验证。冻结的公开响应、双语句间提交、权限拒绝、调用方回滚
 及数据库恢复分别验收；旧分进程资格不代表当前装配或生产容量。
 历史范围见 [ADR-0142](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0142-labeling-class-usage-query-owner.md)。
@@ -60,7 +60,7 @@ ORM 缓存；owner 不提交／回滚，也不把未提交数据和锁转交给�
 
 先应用当前迁移和 `infra/docker/module-data-grants.sql`，再更新 LAN／worktree 的
 既有运行授权。需要独立可信调用账号时，可应用
-`infra/docker/labeling-task-control-grants.sql`：只授权这两个函数，拒绝直接表／列、
+`infra/docker/labeling-grants.sql`（`-v grant_task_control=1`）：只授权这两个函数，拒绝直接表／列、
 序列、角色成员、CREATE、TEMP 和其他模块函数权限。公开用户仍只能经过原 API 授权。
 未迁移的批次与标注内容调用保留现有权限，不能据此宣称完整 Labeling 已独立。
 
@@ -117,7 +117,7 @@ Batch 自动流转也继续按原顺序组合。数据命令不是权限凭据�
 Mask 修订触发器及快照函数保留原调用者权限和版本／快照规则，内部引用限定为公开 schema，
 以适配 owner 的固定搜索路径。配套升级／回滚 SQL 同时进入 Labeling 工件和冻结迁移。
 应用匹配迁移后重施 owner 及 LAN／worktree 授权；独立可信调用账号使用
-`infra/docker/labeling-annotation-writes-grants.sql`，仅得到这三个函数，不得到原表／序列、
+`infra/docker/labeling-grants.sql`（`-v grant_annotation_writes=1`），仅得到这三个函数，不得到原表／序列、
 角色成员、CREATE、TEMP 或其他模块能力。原任务控制账号仍只有其两项函数。
 
 本组不替代切片／Mask、其余导入及视频人工候选的后续迁移。
@@ -140,8 +140,8 @@ AI 标注与解除父预测引用保持两次更新，以保留 Mask 版本和�
 成员，不能替换成人工标注统计的口径。预测行删除本身仍是单独的迁移边界。
 
 这些命令借用同一业务连接与事务，不新增产品环境变量或独立提交点。迁移与 owner／
-runtime 授权必须匹配；专用可信账号分别由 `infra/docker/labeling-editing-grants.sql`
-开放两项编辑函数，以及 `infra/docker/labeling-batch-control-grants.sql` 开放一项批次
+runtime 授权必须匹配；专用可信账号分别由 `infra/docker/labeling-grants.sql`
+的 `grant_editing` 分节开放两项编辑函数，以及 `grant_batch_control` 分节开放一项批次
 函数。原任务控制与人工写入账号的执行范围保持。命令不能代替用户授权。
 
 新增原生回归已接入自有数据库验收器；源码基础检查不等同于真实角色、并发、回滚、冷
@@ -169,9 +169,8 @@ runtime 授权必须匹配；专用可信账号分别由 `infra/docker/labeling-
 可编辑性及锁。运动补偿使用既有几何规则与 Assets 公开位姿能力。四项命令都借用原连接
 和事务，不新增产品部署方式或提交点；命令载荷不是授权凭据。
 
-专用可信账号分别使用 `infra/docker/labeling-prediction-grants.sql`（两项预测写入及一项
-分区维护）、`infra/docker/labeling-scene-track-commands-grants.sql` 与
-`infra/docker/labeling-cross-frame-grants.sql`（各一个函数）。既有账号不扩大执行权，
+专用可信账号分别使用 `infra/docker/labeling-grants.sql` 的 `grant_prediction`（两项预测写入及一项
+分区维护）、`grant_scene_track_commands` 与 `grant_cross_frame` 分节（各一个函数）。既有账号不扩大执行权，
 原生回归使用验收器创建的独占数据库及角色；资格与采用范围继续按唯一台账记录。
 
 ## 视频 worker 的最终写入
@@ -205,7 +204,7 @@ Mask 引用在最终写入事务内锁定，并沿用已有字节核验：保存
 细节见 [Mask 字节接口](./mask-content)。
 
 验收区分普通运行登录的原生拒绝、真实跟踪 worker 的新代次及迟到写入、已封存候选
-的字节核验和恢复。`labeling-video-writer-grants.sql` 保留仅供便携合同验收的单函数
+的字节核验和恢复。`labeling-grants.sql`（`-v grant_video_writer=1`）保留仅供便携合同验收的单函数
 登录；旧独立镜像的采样不作为当前 worker 或生产环境的容量证据。
 
 续租明确返回 `job_not_active` 时，worker 停止续租，
@@ -228,7 +227,7 @@ Mask 引用在最终写入事务内锁定，并沿用已有字节核验：保存
 几何和既有 Mask 修订规则保留；当前管理权／配置锁、贡献证据、统计、审计及提交仍由原工作流组合。
 
 草稿继续是未接入生产入口的内部服务，本次不新增产品入口。可信调用账号使用
-`infra/docker/labeling-annotation-maintenance-grants.sql`，仅获得这一函数的执行权。
+`infra/docker/labeling-grants.sql`（`-v grant_annotation_maintenance=1`），仅获得这一函数的执行权。
 本组源码实现不替代整个 Labeling 的原生权限、并发、独立运行及恢复验收。
 
 ## 讨论、Mask 编辑及场景读取 {#discussion-mask-and-scene}
@@ -242,13 +241,13 @@ Mask 引用在最终写入事务内锁定，并沿用已有字节核验：保存
 Task UUID，未增加产品参数。场景读取使用 `scene_read_query`，严格核对请求字段和返回范围；
 其三个标量 JSON helper 仅由 owner 使用，场景来源仍读 Assets 公开空间投影。
 
-三组可信账号分别使用 `infra/docker/labeling-discussion-grants.sql`、
-`labeling-mask-edit-grants.sql`、`labeling-scene-read-grants.sql`。源码及调用接线已集成，
+三组可信账号分别使用 `infra/docker/labeling-grants.sql` 的 `grant_discussion`、
+`grant_mask_edit`、`grant_scene_read` 分节。源码及调用接线已集成，
 原生权限、并发、冷安装及恢复仍按完整 Labeling 模块集中验收。
 
 ## 历史角色审计与手动验收
 
-`infra/docker/labeling-role-audit-grants.sql` 显式安装五项
+`infra/docker/labeling-grants.sql`（`-v grant_role_audit=1`）显式安装五项
 `yoao_labeling_audit_v1` 固定只读投影，字段／可空语义见同目录的
 `labeling-role-audit.schema.json`。审计账号不读 Task、Batch、Annotation 或 TaskLock
 私表，也不通过 `information_schema` 猜测被权限隐藏的准备列。安装器支持准备迁移前的
