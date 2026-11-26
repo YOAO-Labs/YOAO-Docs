@@ -1,20 +1,20 @@
 ---
-title: LibreYOLO 训练容器
+title: LibreYOLO 训练器插件
 audience: [project_admin, super_admin]
 type: reference
 status: stable
-last_reviewed: 2026-10-20
+last_reviewed: 2026-11-26
 ---
 
-# LibreYOLO 训练容器
+# LibreYOLO 训练器插件
 
-选择「LibreYOLO」训练仓库，可以用项目的冻结矩形框数据训练 YOLO9 检测模型，保存原生权重与完整检查点，并对通过资格检查的规格进行模型回流。本页逐项对照原生参数和平台配置。
+选择「LibreYOLO」训练器，可以用项目的冻结矩形框数据训练 YOLO9 检测模型，保存原生权重与完整检查点，并对通过资格检查的规格进行模型回流。本页逐项对照原生参数和平台配置。
 
-## 容器与仓库的关系
+## 训练器插件与监督器的关系
 
-当前 `training-executor` 镜像同时安装 LibreYOLO 和 Ultralytics，由框架适配器选择训练入口。两个仓库可以共用同一个容器与 GPU，同一物理资源串行执行。LibreYOLO 不是经由 Ultralytics 的训练回调或检查点格式来训练。
+LibreYOLO 训练器以独立插件镜像维护于官方插件仓库 `YOAO-Labs/YOAO-Plugins`（`plugins/trainer/libreyolo/`，插件标识 `yoao.trainer.libreyolo`，协议 `yoao-trainer/v1`），镜像内不含任何 `ultralytics` 依赖。平台无 ML 依赖的 `training-supervisor` 在领取实验后按管理员批准的不可变 OCI 摘要启动一次性断网非 root 容器执行训练，作业退出即回收显存。同一物理 GPU UUID 串行执行。LibreYOLO 不经由 Ultralytics 的训练回调或检查点格式进行训练。
 
-训练镜像固定安装 `libreyolo==1.6.0`，使用 PyTorch `2.14.1+cu132`、torchvision `0.29.1+cu132`。管理员还需为受控型号配置镜像摘要、权重文件与校验值；可选模型由实际目录决定。推理使用独立 LibreYOLO 原生插件，不依赖 Ultralytics；默认 YOLO9 t，另支持 s/m/c。训练使用指定 GPU；模型回流推理须匹配合格的 CPU 或 CUDA 配置。
+官方插件镜像固定安装 `libreyolo==1.6.0`，使用 PyTorch `2.14.1+cu132`、torchvision `0.29.1+cu132`。超级管理员通过 `/api/v1/admin/trainer-plugins` 或 `yoao plugins trainer` 注册不可变镜像摘要、完成资格核验并启用后，且节点已就绪匹配 SHA-256 的基础权重，可选模型才会出现在目录中。推理使用独立 LibreYOLO 原生推理插件，不依赖 Ultralytics；默认 YOLO9 t，另支持 s/m/c。训练使用指定 GPU；模型回流推理须匹配合格的 CPU 或 CUDA 运行时资格。
 
 上游仓库覆盖更多模型和任务，也提供多 GPU、从零训练、LoRA、蒸馏等训练能力，参见[容器依赖对应的仓库说明](https://github.com/LibreYOLO/libreyolo/blob/809009bc294daa6e75e0976ab7cfdd0057d17d79/README.md)。平台当前开放范围见下表，参数对照以其[通用与 YOLO9 配置源](https://github.com/LibreYOLO/libreyolo/blob/809009bc294daa6e75e0976ab7cfdd0057d17d79/libreyolo/training/config.py)为基准。
 

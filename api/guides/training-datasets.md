@@ -3,7 +3,7 @@ title: 在线学习与模型训练 API
 audience: [dev]
 type: reference
 status: stable
-last_reviewed: 2026-10-26
+last_reviewed: 2026-11-26
 ---
 
 # 在线学习与模型训练 API
@@ -23,7 +23,8 @@ last_reviewed: 2026-10-26
 | 训练配方与克隆       | `/api/v1/projects/{project_id}/training-recipes`                              | 项目负责人 / `super_admin`                | 读：`annotations:read` + `datasets:read`；写/解析：另需 `datasets:write`          | [项目训练配方与克隆](#项目训练配方与克隆)             |
 | 模型注册、部署与谱系 | `/api/v1/projects/{project_id}/{trained-models,model-releases,model-lineage}` | 项目负责人 / `super_admin`                | 读：`annotations:read` + `datasets:read`；写：另需 `datasets:write`               | [模型注册、部署与发布](#模型注册、部署与发布)         |
 | 自动训练策略         | `/api/v1/projects/{project_id}/learning-policy`                               | 项目负责人 / `super_admin`                | 读：`annotations:read` + `datasets:read`；写：另需 `datasets:write`               | [自动训练策略](#自动训练策略)                         |
-| 执行器内部回报       | `/api/v1/internal/training`                                                   | 独立执行器（`X-Training-Executor-Token`） | 不使用用户 JWT / API Key                                                          | [实际训练成员回执](#实际训练成员回执)                 |
+| 训练器插件治理       | `/api/v1/admin/trainer-plugins`                                               | 仅 `super_admin`                          | 超管会话或相应管理范围                                                            | [训练器插件治理 API](#训练器插件治理-api)             |
+| 执行器内部回报       | `/api/v1/internal/training`                                                   | 独立监督器（`X-Training-Executor-Token`） | 不使用用户 JWT / API Key                                                          | [实际训练成员回执](#实际训练成员回执)                 |
 
 训练执行器容器部署与成员回执验收见[生产部署：实际训练成员回执的部署验收](/ops/deploy/docker-compose#5-实际训练成员回执的部署验收)，训练相关存储归属、历史 `storage-pin` 与新分配位置切换的恢复边界见[一致备份与隔离恢复演练](/ops/deploy/storage-recovery)。
 
@@ -548,7 +549,7 @@ POST /api/v1/projects/{project_id}/active-learning-rounds/{round_id}/storage-pin
 | GET  | `/model-releases`                       | 当前选择、generation 及分页历史                                 |
 | POST | `/model-releases`                       | 按预期 generation 发布、回退或清除选择，返回 `201`              |
 
-模型列表的 `q`（最多 120 字符）按名称进行不区分大小写的字面子串搜索，`%`、`_` 和反斜线不会作为通配符。`framework` 可选 `ultralytics` 或 `libreyolo`；`created_from`、`created_to` 接受 `YYYY-MM-DD`，按 UTC 日期包含起止整天，反向范围返回 `422`。所有筛选与 `archive` 共同作用于总数和分页，按创建时间、ID 倒序稳定排序。
+模型列表的 `q`（最多 120 字符）按名称进行不区分大小写的字面子串搜索，`%`、`_` 和反斜线不会作为通配符。`framework` 接受任意已注册训练器框架标识（如 `ultralytics`、`libreyolo`）；`created_from`、`created_to` 接受 `YYYY-MM-DD`，按 UTC 日期包含起止整天，反向范围返回 `422`。所有筛选与 `archive` 共同作用于总数和分页，按创建时间、ID 倒序稳定排序。
 
 注册包含 UUID `request_id`、`name`、`run_id`、`attempt_id` 和与原生类别顺序一致的完整 `bindings`。相同标识和请求返回原模型，内容冲突返回 `409`。同项目同一次执行只能注册一个模型，使用新请求标识重复注册也返回 `409`；归档不解除限制，另一条成功执行可以独立注册。支持本平台已验证的 Ultralytics 图片检测产物及独立通过原生 CPU 资格检查的 LibreYOLO YOLO9 检测产物。
 
@@ -629,4 +630,18 @@ training 新分配可通过[存储用途映射](./storage-locations#训练文件
 
 实际读写、核验、签名和现有清理使用保存地址及当前位置当前凭据，实时 endpoint、桶和完整受控根必须匹配；普通密钥轮换不改旧引用、冻结快照／清单、SHA 或首次期限。原 PUT 窗口、inventory、发布围栏、取消及未知关闭责任保持，维护状态不能撤回已经签发的外部 URL。受控根在连接基前缀下使用 `_aap_managed/training/`，最多266个Unicode字符／707个UTF-8字节；逻辑 `projects/{project}/{family}/{owner}/` 与原 key／列宽限制保持。
 
-带根初始化权重仅交给 `runtime_identity.training_saved_prefix_schema>=2` 的 Executor，新领取、租约恢复和 resume 均复核；缺字段按1处理。此项不替代 executor_protocol、模型 policy 或 image digest，也不声明现有镜像已升级。预览输入不含初始化来源时，不附加这项能力门槛。该切换不要求执行训练／试用／评估模型或新增规模测量，九桶恢复范围见[部署说明](/ops/deploy/storage-recovery#训练文件用途切换的部署顺序)。
+带根初始化权重仅交给 `runtime_identity.training_saved_prefix_schema>=2` 的监督器，新领取、租约恢复和 resume 均复核；缺字段按1处理。此项不替代 executor_protocol、模型 policy 或 image digest，也不声明现有镜像已升级。预览输入不含初始化来源时，不附加这项能力门槛。该切换不要求执行训练／试用／评估模型或新增规模测量，九桶恢复范围见[部署说明](/ops/deploy/storage-recovery#训练文件用途切换的部署顺序)。
+
+## 训练器插件治理 API
+
+基路径为 `/api/v1/admin/trainer-plugins`，仅限超级管理员访问（同事务记录审计日志）；对应 Python SDK 为 `client.trainer_plugins`，CLI 为 `yoao plugins trainer`。平台强制“发现不等于资格”：注册插件仅记录 `yoao-extension-manifest/v1` 与 `yoao-trainer/v1` `describe` 能力快照，必须导入已核验的资格报告后方可启用。
+
+| 方法 | 路径后缀                   | 行为                                                                                               |
+| ---- | -------------------------- | -------------------------------------------------------------------------------------------------- |
+| GET  | 空                         | 按可选 `status`、`execution_mode` 列出全部训练器插件（含统一只读投影字段与 `capabilities_digest`） |
+| POST | 空                         | 注册新训练器插件（`container` 档必须绑定不可变 `@sha256:...` 摘要，`local_process` 档 `artifact` 为空），返回 `201` |
+| GET  | `/{plugin_id}`             | 读取指定训练器插件详情、能力快照与资格状态                                                         |
+| POST | `/{plugin_id}/qualify`     | 携带 `expected_revision` 与 `qualification_report_sha256` / `qualification_report` 完成资格核验    |
+| POST | `/{plugin_id}/enable`      | 携带 `expected_revision` 启用已通过资格核验的插件（未通过资格核验返回 `422`；同 `framework_id` 仅允许单个活跃插件） |
+| POST | `/{plugin_id}/disable`     | 携带 `expected_revision` 停用插件，阻止新实验入队与领取，不破坏历史运行与已注册模型                |
+| POST | `/{plugin_id}/retire`      | 携带 `expected_revision` 不可逆退役停用状态的插件，保留历史审计与血缘记录                          |

@@ -3,7 +3,7 @@ title: 在线学习与训练体系
 audience: [dev, ops]
 type: explanation
 status: stable
-last_reviewed: 2026-10-24
+last_reviewed: 2026-11-26
 ---
 
 # 在线学习与训练体系
@@ -26,9 +26,9 @@ last_reviewed: 2026-10-24
 
 1. **审核标注沉淀**：从业务项目中筛选通过质检审核的有效标注，按任务契约过滤。
 2. **冻结快照与数据物化**：语句级一致性读取，生成不可变数据集版本，物化上传至 MinIO `training` 存储桶。
-3. **独立算力受控训练**：独立拉取式执行器（`apps/training-executor`）获取任务凭据，通过共享状态目录的 `flock` 文件锁协调同一资源的执行器，守护原生训练子进程。
-4. **产物评估与质量核验**：对确切最佳权重执行原生验证，核验 SHA-256 与最终报告；负责人注册候选后可另行发起冻结逐样本评估。
-5. **动态回流预标注**：YOLO Backend 通过认证端点安装已核验的检测权重，完成固定样本试用并人工发布后接入单阶段整图预标注。
+3. **独立算力受控训练**：无 ML 依赖的拉取式训练监督器（`apps/training-executor` / `training-supervisor`）通过 `/api/v1/internal/training` 领取任务，结合持久状态目录中的 OS `flock` 互斥锁与容器运行时对账，按 `yoao-trainer/v1` 协议在一次性断网隔离容器（或受控白名单本地进程）中驱动已启用训练器插件（如 `YOAO-Plugins` 中的 `ultralytics` / `libreyolo` 镜像）。
+4. **产物评估与质量核验**：训练器插件输出统一终态收据 `result.json` 与原生评估报告，监督器统一上传并提交 fenced `finish`，API 执行全量流式回读校验 SHA-256、大小与成员回执；负责人注册候选后可另行发起冻结逐样本评估。
+5. **动态回流预标注**：基于训练器声明的 `serving_compatibility`，受控推理插件（如 `yolo-backend`、`libreyolo-plugin`）通过认证 `/managed-models` 端点安装已核验权重，完成固定样本试跑并经人工 CAS 发布后接入预标注。
 6. **主动选样与自动触发**：通过难例挖掘启发式算法圈选高价值样本推入新批次，或由自动策略监听增量数据自动触发重训，形成自增益闭环。
 
 ### 1.2 核心设计哲学与安全边界
@@ -36,15 +36,16 @@ last_reviewed: 2026-10-24
 为确保高并发生产环境下的稳定性与数据一致性，在线学习体系遵循四项根本设计原则：
 
 - **不可变快照与版本确定性**：数据版本一经发布即进入只读状态，历史快照、标签文件与 ZIP 清单永不原地篡改。所有派生分析与后续训练引用均绑定完整 SHA-256 摘要。
-- **独立执行器与协作锁**：训练任务脱离普通 Web/API 的 Celery 异步队列，运行在独立的拉取式执行器上。使用同一资源的执行器共享持久状态目录，并通过 OS `flock` 防止重复认领。该文件锁不阻止其他进程占用 GPU，部署仍需限制可见设备并管理训练与推理算力。
+- **插件化训练器与无 ML 依赖监督器**：平台核心与 `training-supervisor` 不包含任何 PyTorch、CUDA 或具体训练框架依赖。每个训练器插件独立封装在只读非 root 镜像中，采用 `yoao-extension-manifest/v1` 与 `yoao-trainer/v1` 协议；注册表 `yoao_learning_v1.trainer_plugins` 强制“发现不等于资格”，管理员完成能力核验与资格导入后方可启用。监督器通过持久 `/state` 文件锁、先落盘后启动与启动期孤儿容器对账确保同一物理 GPU UUID 严格互斥，并支持 `TRAINING_GPU_UUIDS` / `TRAINING_CPU_SLOTS` 多槽位并行调度不同资源。
 - **不可变 Attempt 与断点续训隔离**：失败重试或从检查点续训均沿用原任务配置，但会分配全新的 `TrainingAttempt`，新尝试绝不覆盖历史指标曲线或改写前次权重产物。
-- **严格收据协议与双向凭证校验**：模型回流时推理后端与平台必须双向核验类别映射顺序、家族规格与运行时资格，防止因标签错位导致几何变形或脏数据污染。
+- **严格收据协议与数据驱动回流门禁**：模型回流由训练器产出的 `serving_compatibility` 与推理插件能力声明做数据驱动匹配，推理后端与平台双向核验类别映射顺序、产物格式与运行时资格，防止标签错位或脏数据污染。
 
 ### 1.3 核心领域模型速查
 
-| 实体模型                     | 数据库表 / 模块             | 核心职责与生命周期                                                                    |
-| :--------------------------- | :-------------------------- | :------------------------------------------------------------------------------------ |
-| **`ProjectTaskDataset`**     | `project_task_datasets`     | 按 `(project_id, canonical_task)` 唯一标识项目派生的任务版本流，隔离不同视觉任务      |
+| 实体模型                     | 数据库表 / 模块                    | 核心职责与生命周期                                                                    |
+| :--------------------------- | :--------------------------------- | :------------------------------------------------------------------------------------ |
+| **`TrainerPlugin`**          | `yoao_learning_v1.trainer_plugins` | 训练器插件注册、不可变 OCI 摘要绑定、资格报告核验与状态机（`registered`→`qualified`→`enabled`↔`disabled`→`retired`） |
+| **`ProjectTaskDataset`**     | `project_task_datasets`            | 按 `(project_id, canonical_task)` 唯一标识项目派生的任务版本流，隔离不同视觉任务      |
 | **`TrainingDatasetVersion`** | `training_dataset_versions` | 冻结快照、物化图片与 ZIP 归档包的唯一持久所有者，序号单调递增                         |
 | **`TrainingRun`**            | `training_runs`             | 训练实验配置的不可变载体，锁定训练参数、基础模型与数据版本引用                        |
 | **`TrainingAttempt`**        | `training_attempts`         | 单次物理执行尝试，绑定实际执行器、GPU 租约、指标采样与退出回执                        |
@@ -210,22 +211,22 @@ API 预检逐项执行有界严格读取并及时关闭临时快照，报告引�
 - 支持 `q`（名称/ID 模糊搜索）、`status`、`task`、`framework`（训练实验）、`created_from`、`created_to` 组合查询。
 - 响应同时返回 `filtered_total`、`unfiltered_total` 与 `status_counts`，使前端能够准确区分「筛选条件无匹配」与「项目尚无任何记录」的空状态。
 
-### 3.2 独立拉取式执行器与资源文件锁
+### 3.2 无 ML 依赖监督器、隔离作业容器与资源锁
 
-训练任务脱离普通异步 Celery 队列，由常驻宿主机的 `apps/training-executor` 独立拉取与执行：
+训练任务脱离普通异步 Celery 队列，由常驻宿主机的无 ML 依赖 `training-supervisor`（`apps/training-executor`）独立拉取，并通过共享 `ContainerRuntimePort`（默认本地 Docker CLI）或受控 `local_process` 白名单驱动符合 `yoao-trainer/v1` 协议的训练器插件：
 
 ```
 [Platform API (/api/v1/internal/training)]
         │
-        ▲ (轮询 Claim / 心跳保持 / 状态回执)
+        ▲ (轮询 Claim / 心跳保持 / 预签名上传 / fenced Finish)
         │
-[apps/training-executor (守护进程)]
+[training-supervisor (无 ML 依赖守护进程，纯 nvidia-smi 探测)]
         │
-        ├── 1. 持久目录取得同一 resource_id 的 OS flock 文件锁
-        ├── 2. 子进程 Popen 启动训练并继承文件描述符
-        ├── 3. 立即启动单调时钟 watchdog 监控进程组
-        ├── 4. 实时截获 stdout/stderr 脱敏并落盘采样
-        └── 5. 退出时确认整个进程组消亡，固化退出回执
+        ├── 1. 持久 /state 目录取得同一 resource_id 的 OS flock 文件锁并先对账回收孤儿容器
+        ├── 2. 校验下载冻结数据集，先落盘 assignment.json（绑定容器名与 attempt_id）
+        ├── 3. 拉起一次性隔离训练容器（--network=none、cap_drop=ALL、no-new-privileges、:ro 挂载）
+        ├── 4. 立即启动单调时钟 ProcessBudget 看门狗并截获 stdout/stderr 脱敏落盘
+        └── 5. 强停或正常结束后复核容器已退出，统一上传产物与已提交检查点并提交终态回执
 ```
 
 #### 实验产物的固定归属
@@ -242,10 +243,10 @@ API 预检逐项执行有界严格读取并及时关闭临时快照，报告引�
 
 删除事务将完整归属复制到独立 `TrainingStorageDeletion`；NULL 旧实验或数据版本清理意图拒绝物理删除。数据库拒绝普通改写和含固定事实的破坏性降级，离线恢复仅允许表 owner 显式映射 bucket/identity。部署与旧执行器收尾见[运维步骤](/ops/deploy/storage-recovery#训练实验产物归属的部署顺序)。增强预览、逐样本评估和主动学习的自身输出仍保留独立合同。training 新分配经[用途映射预览确认](/api/guides/storage-locations#训练文件用途切换)切换，已有及在途 owner 保留原地址；旧 NULL 继续显式核验，不以全历史接管作为切换门槛。带根初始化来源需执行器声明 `training_saved_prefix_schema>=2`，其余训练协议与真实模型资格要求保持。
 
-#### 资源租约与协作文件锁
+#### 资源租约、协作锁与孤儿容器回收
 
-- 同一 `resource_id` 的执行器通过共享状态目录中的锁文件取得排他锁，不锁定 GPU 设备本身。
-- 训练子进程派生时直接继承该文件描述符。执行器主进程异常后，仍存活的子进程继续持锁，其他遵守该协议的执行器不能重复认领同一资源。
+- 同一 `resource_id` 的监督器通过共享 `/state` 状态目录中的锁文件取得排他锁；支持通过 `TRAINING_GPU_UUIDS` 与 `TRAINING_CPU_SLOTS` 管理多张物理 GPU 与多 CPU 预览槽，单张物理 GPU 同一时刻仍严格受单一 `TrainingResourceLease` 互斥保护。
+- 在 `container` 模式下，监督器遵循“先落盘后启动、启动期先对账再申领、确认退出才释租”三条硬规则：启动容器前先原子写入 `assignment.json`，重启后先按 `yoao.trainer.gpu_resource_id` 标签枚举并强停清理残留孤儿容器，再执行恢复或申领新任务；在 `local_process` 模式下沿用子进程 `flock` 继承与进程组终止确认。
 
 #### 心跳与失联（`lost`）保护
 
@@ -260,36 +261,34 @@ API 预检逐项执行有界严格读取并及时关闭临时快照，报告引�
 
 训练账本通过 `yoao_learning_v1` 的固定数据能力访问。普通 API（包括内部执行器协议）和周期清理不再直接读写 Run、Attempt、事件、观测流或预览私表；训练执行器仍独占原生进程与文件锁。完成回执、尝试终态和数据库资源租约释放留在同一调用方事务，提交失败时一并回滚。只读的实验摘要与谱系不包含租约摘要，且不会授权调用方修改账本。
 
-### 3.3 原生训练框架适配与原生权重初始化
+### 3.3 官方参考训练器插件与原生权重初始化
 
-平台内置适配器实现框架抽象，支持 Ultralytics YOLO 与 LibreYOLO：
+所有训练框架均已从主仓库解耦为独立训练器插件（统一使用 `yoao-plugin-sdk[trainer]` 与 `yoao-trainer/v1` 协议）。官方参考实现维护在独立插件仓库 `YOAO-Labs/YOAO-Plugins`（`plugins/trainer/ultralytics/` 与 `plugins/trainer/libreyolo/`），各自以非 root `USER 10001:10001` 独立构建，包含专属 Python / PyTorch / CUDA 依赖：
 
-| 维度                   | Ultralytics YOLO                                                                | LibreYOLO                                                                                                    |
-| :--------------------- | :------------------------------------------------------------------------------ | :----------------------------------------------------------------------------------------------------------- |
-| **支持模型规格**       | `yolo11n/s/m/l/x`（检测）、`yolo11n-seg`（实例分割）                            | `LibreYOLO9t/s/m/c/e`                                                                                        |
-| **支持训练任务**       | `detect`、`segment`                                                             | `detect`                                                                                                     |
-| **模型回流与评估资格** | 检测和已合格的 YOLO11n 实例分割支持受控回流；分割使用独立 RLE、评估及初始化资格 | YOLO9 t/s/m/c 检测权重通过资格核验后可回流、试用与人工发布；e 仅训练与下载，共享逐样本评估和主动选样尚不支持 |
+| 维度                   | Ultralytics YOLO 插件（`yoao.trainer.ultralytics`）                              | LibreYOLO 插件（`yoao.trainer.libreyolo`）                                                                   |
+| :--------------------- | :------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------- |
+| **支持模型规格**       | YOLOv8 / YOLO11 / YOLO26 的 `n/s/m/l/x`（检测与 `-seg` 实例分割，共 30 项）      | `libreyolo9t` / `9s` / `9m` / `9c`（共 4 项）                                                                |
+| **支持训练任务**       | `detect`、`segment`                                                              | `detect`                                                                                                     |
+| **模型回流与评估资格** | 检测和已合格的实例分割支持经 `yolo-backend` 受控回流；分割支持简单多边形与 RLE   | YOLO9 t/s/m/c 原生检测权重经 `libreyolo-plugin` 回流、试用与人工发布；共享逐样本评估和主动选样需独立推理资格 |
 
 - **受控项目权重初始化**：
   - `training_initialization` 允许选择同项目内保留的权威候选模型作为初始化起点。
-  - 原生 YOLO 以明确的 `weights-only` 路径构建训练器，在首个批次前核对模型骨干网规格、类别数及全部状态张量（state tensors）。
+  - 原生 YOLO 插件以明确的 `weights-only` 路径构建训练器，在首个批次前核对模型骨干网规格、类别数及全部状态张量（state tensors）。
   - 独立证据记录证明 epoch 计数、优化器、调度器、标量缩放器与 EMA 均已重置为干净初始态。
 - **平台不可变检查点**：
-  - 完整检查点在框架剥离优化器状态之前即复制为只读文件。
-  - 断点续训时平台直接下载本地不可变检查点，沿用原配置与验证集基准，生成新的 `TrainingAttempt`，保持历史记录完全隔离。
+  - 插件按轮次写出完整检查点并原子替换 `checkpoint.json`（先 `fsync` 新元数据再清理旧文件）；即使尝试在中途被取消或失败，监督器也会在校验非符号链接、路径边界与 SHA-256 后将已提交检查点纳入上传清单。
+  - 断点续训时平台直接下载本地不可变检查点（LibreYOLO 另执行 `weights_only=True` 校验），沿用原配置与验证集基准，生成新的 `TrainingAttempt`，保持历史记录完全隔离。
 
-当前镜像固定 Ultralytics `8.4.183`。原生正整数 `batch` 关闭 AutoBatch，但不会关闭首次训练轮次的 OOM 自动减半；这个版本没有公开的关闭开关。执行器只在按版本约束的适配层封锁该重试分支，让原始 OOM 直接失败，不以更小批次继续同一个 Attempt。正常执行与断点续训都使用原冻结 `batch`，续训重绑本次 Attempt 的文件路径而不重置原生训练状态。
+官方 `ultralytics` 插件镜像固定 Ultralytics `8.4.183`，在受控适配层封锁首轮 OOM 自动降批分支并映射镜像内置的 DejaVu Sans / Noto Sans CJK 离线字体，全程在 `--network=none` 沙箱内运行；官方 `libreyolo` 插件镜像固定 LibreYOLO `1.6.0` 且零 `ultralytics` 依赖。
 
-原生数据检查及标注绘图分别按 ASCII／非 ASCII 类别查找字体。执行器将两个原生查找名映射到镜像中未修改的 DejaVu Sans 和 Noto Sans CJK，不读取用户字体缓存、不复制或下载字体。运行时可写的 Ultralytics 设置目录不是字体资产目录。字体、许可和离线验收见[实例分割在线学习验收](../how-to/validate-segmentation-online-learning)。
+### 3.4 原生增强预览与容器强制 CPU-only 边界
 
-### 3.4 原生增强预览与 CPU 槽位管理
+声明 `preview` 能力的已启用训练器插件（例如官方 `ultralytics` 插件）可为图片检测提供原生增强预览；其他任务和未声明该能力的插件不会自动获得预览资格。
 
-系统为 Ultralytics YOLO11 图片检测提供原生增强预览，帮助在正式训练前检查增强效果；其他任务和框架不因支持训练而自动获得预览能力。
-
-- **CPU 槽位租约**：使用独立的 `TrainingPreviewResourceLease`，不占用宝贵的 GPU 算力租约与 `TrainingAttempt`。
-- **沙箱隔离运行**：
-  - 预览子进程对 CUDA 环境进行屏蔽，在导入训练框架前限制虚拟内存上限为 16 GiB、CPU 软上限 30 秒、硬上限 35 秒、墙钟时间 45 秒、单核单线程运行。
-  - 原生镜像仅运行 `YOLODataset` 增强流水线，剥离优化器与反向传播计算。
+- **CPU 槽位租约**：使用独立的 `TrainingPreviewResourceLease`（`augmentation-preview/cpu-N`），不占用 GPU 算力租约与 `TrainingAttempt`。
+- **容器/OS 层强制 CPU-only 沙箱**：
+  - `PreviewSupervisor` 不信任第三方插件自报遵守 CPU 约束，在容器边界强制不挂载 `--gpus`，注入 `NVIDIA_VISIBLE_DEVICES=void` 与 `CUDA_VISIBLE_DEVICES=""`，施加 `--cpus=1`、16 GiB 内存上限、`--pids-limit=128`、`--network=none` 与 45 秒墙钟超时强杀；插件回执中的 `cuda_initialized == false` 作为纵深防御复核。
+  - 插件仅运行数据增强流水线，剥离优化器与反向传播计算。
 - **产物与缓存回收**：产物输出至 `projects/{project}/previews/{preview}/`，带有 24 小时自动过期机制，由 `cleanup` 队列的后台任务清理过期引用与存储前缀。
 
 负责人 DELETE 与周期清理不是同一命令：HTTP 先按原顺序取得当前项目管理权和预览行锁，再由 `training_previews.expire` 记录当前时刻并调用既有取消规则。排队记录及 AsyncJob 在同一事务中进入 cancelled；活动执行只写取消请求并保留 CPU 租约，直至 finish 确认进程退出。读取可按到期时间呈现 expired，但这不表示预览记录已物理删除；周期 cleanup 仍等待最后一次 PUT 授权窗口后独立删除对象和记录。
@@ -521,3 +520,4 @@ Preview 原行、EvaluationRun 的删除意图行分别承担耐久清理责任�
 - [ADR 0085: 简单多边形实例训练](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0085-qualified-polygon-instance-training.md)
 - [ADR 0086: 规范任务数据契约](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0086-canonical-task-data-contracts.md)
 - [ADR 0087: 项目任务版本流](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/archive/0087-project-task-dataset-streams.md)
+- [ADR 0189: 训练器扩展点与隔离作业协议](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/archive/0189-trainer-extension-point.md)

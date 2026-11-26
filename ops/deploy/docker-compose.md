@@ -905,13 +905,13 @@ backend `/health` 返回新增 `gpu_info` / `cache` 子对象，便于运维一�
 
 > 这套 Prometheus/Grafana 与超管「模型市场」的实时 PerfHud 是**两套通道、同一数据源**（`/metrics` vs `/health` 共用同一次采样）：PerfHud 管"实时一眼看"，Prometheus 管"历史趋势 + 告警"。详见 [可观测性](/ops/observability/)。
 
-### 8.5 受控训练执行器 (Training Executor)
+### 8.5 受控训练监督器与训练器插件 (Training Supervisor & Trainer Plugins) {#_8-5-受控训练执行器-training-executor}
 
-模型训练是长耗时、高算力占用的批处理任务，平台通过独立的拉取式执行器（`apps/training-executor`）与独立 Compose 覆盖文件 `docker-compose.training.yml` 运行，不占用普通 Celery worker。
+模型训练是长耗时、高算力占用的批处理任务。平台通过无 ML 依赖的独立拉取式训练监督器（`apps/training-executor`，Compose 叠加文件 `docker-compose.training.yml`）领取作业，并按 `yoao-trainer/v1` 协议拉起一次性断网隔离的训练器插件容器（官方插件 `plugins/trainer/ultralytics` 与 `plugins/trainer/libreyolo` 维护于 `YOAO-Labs/YOAO-Plugins`），不占用普通 Celery worker，也不在平台核心镜像中耦合 PyTorch 或 CUDA。
 
 #### 1. 准备配置与 Token 密钥
 
-执行器与平台 API 通过共享密钥进行内部认证。生成一个至少 32 字符的安全随机 Token 并写入受限权限的文件：
+监督器与平台 API 通过共享密钥进行内部认证。生成一个至少 32 字符的安全随机 Token 并写入受限权限的文件：
 
 ```bash
 # 生成私有 Token 文件（权限 600）
@@ -919,16 +919,17 @@ openssl rand -hex 32 > ./secrets/training_executor_token
 chmod 600 ./secrets/training_executor_token
 ```
 
-在平台的 `.env` 中配置相同的 Token 及启用开关：
+在平台的 `.env` 中配置相同的 Token、启用开关与节点资源标识（旧静态 `TRAINING_CATALOG_JSON` 已移除，改由数据库 `yoao_learning_v1.trainer_plugins` 管理已启用训练器插件）：
 
 ```bash
 TRAINING_ENABLED=true
 TRAINING_EXECUTOR_TOKEN=<secrets/training_executor_token 中的内容>
+TRAINING_NODE_ID=gpu-node-01
+# 单卡使用 TRAINING_GPU_UUID；多卡可使用逗号分隔的 TRAINING_GPU_UUIDS 与 TRAINING_CPU_SLOTS
+TRAINING_GPU_UUID="GPU-12345678-abcd-ef01-2345-6789abcdef01"
 ```
 
-为 API 与执行器配置匹配的 `TRAINING_NODE_ID` 和物理 `TRAINING_GPU_UUID`。在 API 端设置 `TRAINING_CATALOG_JSON`，只列已核验的框架版本、镜像摘要与基础权重；结构示例见[环境变量参考](/dev/reference/env-vars)。修改目录后刷新 API，重建实际执行训练策略检查的默认 Celery worker。
-
-#### 2. 配置执行器环境变量
+#### 2. 配置监督器环境变量与预置基础权重
 
 获取宿主机物理 GPU 的真实 UUID：
 
@@ -937,13 +938,13 @@ nvidia-smi -L
 # 输出示例：GPU 0: NVIDIA GeForce RTX 4090 (UUID: GPU-12345678-abcd-ef01-2345-6789abcdef01)
 ```
 
-在执行器环境或 `.env` 中指定：
+在监督器环境或 `.env` 中指定：
 
 ```bash
 TRAINING_GPU_UUID="GPU-12345678-abcd-ef01-2345-6789abcdef01"
 TRAINING_EXECUTOR_TOKEN_PATH="./secrets/training_executor_token"
 TRAINING_MODELS_PATH="./training/models"
-TRAINING_IMAGE="registry.example.com/team/annotation-training:controlled"
+TRAINING_IMAGE="registry.example.com/team/yoao-training-supervisor:controlled"
 TRAINING_IMAGE_DIGEST="sha256:..."
 ```
 
@@ -970,42 +971,48 @@ apps/api/.venv/bin/python scripts/prepare-controlled-model-assets.py \
 一个节点的缓存或资格通过不代表其他节点已就绪。使用固定实例引用的请求不会因节点失联静默切换。
 保留迁移前的文件和镜像，确认活动读取结束后再清理冗余文件；权重准备命令本身不删除旧文件或训练产物。
 
-将示例仓库替换为部署主机可访问的实际 registry，先完成登录。`TRAINING_IMAGE` 可带标签但不得包含 `@digest`；`TRAINING_IMAGE_DIGEST` 必须是该仓库已发布镜像的 manifest 摘要，不能使用 `docker image inspect` 的 `.Id`。Compose 将二者组成同一个不可变引用用于运行镜像及执行器上报身份，单独改变标签不会绕过摘要固定。
+将示例仓库替换为部署主机可访问的实际 registry，先完成登录。`TRAINING_IMAGE` 可带标签但不得包含 `@digest`；`TRAINING_IMAGE_DIGEST` 必须是该仓库已发布监督器镜像的 manifest 摘要，不能使用 `docker image inspect` 的 `.Id`。Compose 将二者组成同一个不可变引用用于运行监督器及上报身份，单独改变标签不会绕过摘要固定。
 
-#### 3. 构建镜像并启动执行器
+#### 3. 构建监督器与官方训练器镜像、注册启用并启动
 
 ```bash
-# 1. 使用仓库根目录上下文构建并发布（也可采用已发布、已核验的镜像）
-export TRAINING_IMAGE="registry.example.com/team/annotation-training:controlled"
+# 1. 构建并发布无 ML 依赖的训练监督器镜像（非 root USER 10001:10001）
+export TRAINING_IMAGE="registry.example.com/team/yoao-training-supervisor:controlled"
 TRAINING_BUILD_METADATA=$(mktemp)
 docker buildx build -f apps/training-executor/Dockerfile \
   -t "$TRAINING_IMAGE" --push --metadata-file "$TRAINING_BUILD_METADATA" .
-
-# 2. 从本次发布元数据获取确切 manifest digest（需要 jq）
 export TRAINING_IMAGE_DIGEST=$(jq -er '."containerimage.digest" | select(test("^sha256:[0-9a-f]{64}$"))' "$TRAINING_BUILD_METADATA")
 rm -f "$TRAINING_BUILD_METADATA"
 
-# 3. 将相同 digest 同步到平台训练目录后，按固定摘要启动
+# 2. 在 YOAO-Plugins 仓库独立构建并发布所需官方训练器插件镜像（以 ultralytics / libreyolo 为例），取得不可变 @sha256:... 摘要
+#    通过离线 `docker run --rm <image>@sha256:... describe` 获取能力快照
+
+# 3. 使用超管 CLI（或 /api/v1/admin/trainer-plugins*）注册、导入资格报告并启用训练器插件
+yoao plugins trainer register --manifest /path/to/manifest.json --source-tier official \
+  --execution-mode container --artifact "registry.example.com/team/trainer-ultralytics@sha256:..." \
+  --capabilities /path/to/capabilities.json
+yoao plugins trainer qualify yoao.trainer.ultralytics --expected-revision 1 --report /path/to/qualification.json
+yoao plugins trainer enable yoao.trainer.ultralytics --expected-revision 2
+
+# 4. 启动训练监督器
 docker compose -f docker-compose.training.yml --profile training up -d training-executor
 ```
 
-将镜像仓库和摘要保存在部署配置中；Compose 不再包含 `build`，启动时只选择已发布镜像。仅修改 API/Web 业务代码无需重新构建训练镜像。
+将监督器镜像仓库和摘要保存在部署配置中；Compose 不再包含 `build`，启动时只选择已发布镜像。训练器插件升级只需发布新插件镜像摘要并在平台完成资格核验与切换，无需重建 API 或监督器镜像。
 
-#### 4. 训练参数契约与镜像升级
+#### 4. 训练契约与监督器升级
 
-训练镜像使用仓库根目录构建上下文：`docker build -f apps/training-executor/Dockerfile .`。专用 `Dockerfile.dockerignore` 仅包含执行器及共享参数包，避免将工作树运行数据或凭据发送到构建上下文。API 镜像也安装同一 `yoao-training-contract` 包；更改定义后需要重建执行器、刷新对应 API/worker，并检查 runtime 的精确 `supported_configs` 与目录状态。
-
-保留历史冻结配置和旧镜像。仅在完成原生及恢复资格后，可为当前受控框架目录增加 `legacy_images: ["sha256:旧镜像身份"]`；它只允许新镜像执行已冻结的修订 1 实验，不能扩展参数或跨版本、跨资源领取。未配置时仍要求精确镜像。镜像目录改变后自动策略暂停，负责人重新保存后才采用新环境；不要改写历史配置摘要或强行释放 GPU 租约。
+监督器镜像使用仓库根目录构建上下文：`docker build -f apps/training-executor/Dockerfile .`，仅安装轻量化 `yoao-sdk`、`httpx`、`psutil` 与容器运行时 CLI，不含任何 ML 或 CUDA 依赖。升级监督器或训练器插件后，旧实验保留其冻结配置与历史快照，不自动改写历史配置摘要或强行释放活跃 GPU 租约；插件能力或基础权重变化时，自动策略会暂停并要求项目负责人复核后重新保存。
 
 #### 5. 实际训练成员回执的部署验收
 
-执行器健康、源码更新或镜像构建成功都不能替代实际领取与发布验收。新增成员合同要求 runtime 上报匹配的 `input_receipt_policy_digest`；即使镜像摘要相同，缺少能力也不能领取。
+监督器健康或镜像构建成功都不能替代实际领取与发布验收。新增成员合同要求监督器上报匹配的 `input_receipt_policy_digest`；即使镜像摘要相同，缺少能力也不能领取。
 
-1. **核对环境与空闲状态。** 检查容器的 Compose 项目、配置文件、API 地址、节点 ID、GPU UUID 和 `/state` 挂载。确认没有排队、执行或上传中的实验，再升级对应服务。工作树使用自己的 API、凭据和部署配置，不修改共享 `.env` 或借用主工作区的执行器。不同 GPU 可以使用独立状态目录；同一物理 GPU 上的执行器必须沿用同一节点 ID 和同一个持久 `/state`，不能靠更换 Compose 项目名绕过资源锁。
-2. **同步不可变镜像身份。** 构建并发布包含执行器和共享合同的镜像，将 registry manifest digest 同步到目标 API 的训练目录和 Executor 配置。刷新使用该目录的 API、策略 worker 与 scheduler，再按固定摘要重建对应 Executor 容器。保留状态目录、模型文件及历史镜像；不挂载宿主源码冒充镜像升级。
-3. **检查实际能力。** 从运行容器调用 `training_executor.worker.runtime_identity()`，核对 `image_digest`、`gpu_uuid`、框架版本、`supported_configs` 和 `input_receipt_policy_digest`。项目训练目录应显示节点在线，所选基础权重已准备且兼容。API、目录与容器必须指向同一个节点和同一个镜像摘要。
-4. **执行真实小实验。** 使用含完整成员清单、训练和验证分区都非空的就绪数据版本，检查预检返回的 `config.input_contract`，再通过正常实验入口提交有界训练。至少覆盖本次部署启用的框架与数据桥接；不要通过直接调用训练子进程、替换 loader、手写回执或补写数据库终态获得成功。
-5. **独立核对发布结果。** 实验成功后，从产物下载 `manifest.json`，核验文件 SHA、`run_id`、`attempt_id`、配置摘要及 `input_membership`。成员回执的数据版本、包摘要、策略、train／val 数量和完整成员集合须与冻结清单一致；终态后确认该执行已释放资源。下载地址与凭据不写入公共日志。
+1. **核对环境与空闲状态。** 检查监督器的 Compose 项目、配置文件、API 地址、节点 ID、GPU UUID 和持久 `/state` 挂载。确认没有排队、执行或上传中的实验，再升级对应服务。工作树使用自己的 API、凭据和部署配置，不修改共享 `.env` 或借用主工作区的监督器。不同 GPU 可以使用独立状态目录；同一物理 GPU 上的监督器必须沿用同一节点 ID 和同一个持久 `/state`，不能靠更换 Compose 项目名绕过资源锁。
+2. **同步不可变镜像身份。** 发布监督器镜像摘要与训练器插件不可变 `@sha256:...` 摘要，在平台 `/api/v1/admin/trainer-plugins` 完成训练器资格核验与启用，并按固定摘要重建监督器容器。保留状态目录、预置模型文件及历史镜像。
+3. **检查实际能力。** 查询 `/api/v1/training/catalog` 与监督器 `runtime_identity()`，核对 `executor_protocol=3`、`trainer_protocols=["yoao-trainer/v1"]`、`image_digest`、`gpu_uuid`、`input_receipt_policy_digest` 与 `base_asset_sha256`。目录应显示节点在线且已启用训练器的基础权重已就绪。
+4. **执行真实小实验。** 使用含完整成员清单、训练和验证分区都非空的就绪数据版本，检查预检返回的 `config.input_contract`，再通过正常实验入口提交有界训练。核验受管训练容器运行在 `--network=none`、`cap_drop=ALL`、`no-new-privileges`、只读 `/models` 与 `/work/input` 沙箱中；不要通过手写回执或补写数据库终态获得成功。
+5. **独立核对发布结果。** 实验成功后，从产物下载 `manifest.json` 与 `result.json`，核验文件 SHA、`run_id`、`attempt_id`、配置摘要及 `input_membership`。成员回执的数据版本、包摘要、策略、train／val 数量和完整成员集合须与冻结清单一致；终态后确认训练容器已移除且 GPU 资源已释放。下载地址与凭据不写入公共日志。
 
 原生加载器接纳集合的回执不是节点缓存命中证明，也不记录每轮抽样轨迹。旧实验保留原镜像、资源和配置身份；部署新镜像不会自动授权跨镜像续训，不为验收添加未经核验的兼容映射。协议字段见[实际训练成员回执](/api/guides/training-datasets#实际训练成员回执)。
 

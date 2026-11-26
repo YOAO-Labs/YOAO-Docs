@@ -1,20 +1,20 @@
 ---
-title: Ultralytics 训练容器
+title: Ultralytics 训练器插件
 audience: [project_admin, super_admin]
 type: reference
 status: stable
-last_reviewed: 2026-10-20
+last_reviewed: 2026-11-26
 ---
 
-# Ultralytics 训练容器
+# Ultralytics 训练器插件
 
-选择「Ultralytics」训练仓库，可以用项目的冻结标注训练 YOLOv8、YOLO11 和 YOLO26 的目标检测或实例分割模型。三个家族均登记 n/s/m/l/x 规格；实际可选项以管理员已准备、校验并启用的目录为准。本页列出使用的仓库、支持范围，以及原生配置和平台配置的完整对照。
+选择「Ultralytics」训练器，可以用项目的冻结标注训练 YOLOv8、YOLO11 和 YOLO26 的目标检测或实例分割模型。三个家族均登记 n/s/m/l/x 规格；实际可选项以超级管理员已在平台注册、通过资格核验并启用的训练器插件与节点预置权重为准。本页列出使用的仓库、支持范围，以及原生配置和平台配置的完整对照。
 
-## 容器与仓库的关系
+## 训练器插件与监督器的关系
 
-当前部署使用共享的 `training-executor` 镜像，其中同时安装 Ultralytics 和 LibreYOLO。界面中的两个训练仓库分别表示两套框架适配器；它们可以由同一个容器执行，并共用同一张 GPU。同一物理资源一次执行一个实验，仓库数量不代表并行训练数量。
+Ultralytics 训练器以独立插件镜像维护于官方插件仓库 `YOAO-Labs/YOAO-Plugins`（`plugins/trainer/ultralytics/`，插件标识 `yoao.trainer.ultralytics`，协议 `yoao-trainer/v1`），与 LibreYOLO 训练器插件完全隔离。平台部署无 ML 依赖的 `training-supervisor`（`apps/training-executor`），在领取实验后按管理员批准的不可变 OCI 镜像摘要 `@sha256:...` 启动一次性断网非 root 容器执行训练，作业退出即完整回收显存。同一物理 GPU UUID 同一时刻仍仅执行一个实验；多卡场景可通过 `TRAINING_GPU_UUIDS` 独立调度不同 GPU。
 
-镜像固定安装 `ultralytics==8.4.183`，使用 PyTorch `2.14.1+cu132`、torchvision `0.29.1+cu132`。管理员配置镜像摘要和每个基础权重的校验值后，平台才把相应型号列为可选项。执行器核对依赖、权重、数据与参数身份，不能通过填写其他模型文件名绕过目录。
+官方插件镜像固定安装 `ultralytics==8.4.183`，使用 PyTorch `2.14.1+cu132`、torchvision `0.29.1+cu132`。超级管理员通过 `/api/v1/admin/trainer-plugins` 或 `yoao plugins trainer` 注册镜像摘要、核验资格并启用后，且节点只读目录已就绪对应基础权重（SHA-256 严格匹配），平台才将相应型号列为可选项，不能通过填写其他模型文件名绕过目录。
 
 上游仓库还提供其他模型家族和任务。查看原生功能时，以[容器依赖对应的仓库说明](https://github.com/ultralytics/ultralytics/blob/v8.4.183/README.md)及[配置源文件](https://github.com/ultralytics/ultralytics/blob/v8.4.183/ultralytics/cfg/default.yaml)为依据；下面的平台支持表决定哪些能力可以在在线学习中使用。
 
