@@ -88,16 +88,18 @@
 
 | Method | Path |
 |---|---|
-| POST | `/` |
-| GET | `/` |
-| GET | `/{installation_id}` |
-| GET | `/{installation_id}/assets` |
-| PUT | `/{installation_id}/assets` |
-| POST | `/{installation_id}/activate` |
-| POST | `/{installation_id}/disable` |
-| POST | `/{installation_id}/quiesce` |
-| POST | `/{installation_id}/retire` |
-| POST | `/{installation_id}/cancel-prepared` |
+| POST | `/direct` |
+| POST | `/installations` |
+| GET | `/installations` |
+| GET | `/installations/{installation_id}` |
+| POST | `/installations/{installation_id}/probe` |
+| GET | `/installations/{installation_id}/assets` |
+| PUT | `/installations/{installation_id}/assets` |
+| POST | `/installations/{installation_id}/activate` |
+| POST | `/installations/{installation_id}/disable` |
+| POST | `/installations/{installation_id}/quiesce` |
+| POST | `/installations/{installation_id}/retire` |
+| POST | `/installations/{installation_id}/cancel-prepared` |
 
 ## `admin_preannotate.py`
 
@@ -112,6 +114,18 @@
 | Method | Path |
 |---|---|
 | GET | `/` |
+
+## `admin_trainer_plugins.py`
+
+| Method | Path |
+|---|---|
+| GET | `/admin/trainer-plugins` |
+| GET | `/admin/trainer-plugins/{plugin_id}` |
+| POST | `/admin/trainer-plugins` |
+| POST | `/admin/trainer-plugins/{plugin_id}/qualify` |
+| POST | `/admin/trainer-plugins/{plugin_id}/enable` |
+| POST | `/admin/trainer-plugins/{plugin_id}/disable` |
+| POST | `/admin/trainer-plugins/{plugin_id}/retire` |
 
 ## `annotation_comments.py`
 
@@ -429,6 +443,18 @@
 | GET | `/tasks/{task_id}/content-identity` |
 | POST | `/projects/{project_id}/backfill-thumbnails` |
 
+## `format_adapter_plugins.py`
+
+| Method | Path |
+|---|---|
+| GET | `/admin/format-adapters` |
+| GET | `/admin/format-adapters/{format_id}` |
+| POST | `/admin/format-adapters` |
+| POST | `/admin/format-adapters/{format_id}/probe` |
+| POST | `/admin/format-adapters/{format_id}/activate` |
+| POST | `/admin/format-adapters/{format_id}/disable` |
+| POST | `/admin/format-adapters/{format_id}/retire` |
+
 ## `groups.py`
 
 | Method | Path |
@@ -585,6 +611,23 @@
 | GET | `/model-lineage/{kind}/{node_id}` |
 | GET | `/trained-models/{version_id}/decisions` |
 | POST | `/trained-models/{version_id}/decisions` |
+
+## `notification_channels.py`
+
+| Method | Path |
+|---|---|
+| GET | `/admin/notification-channels` |
+| POST | `/admin/notification-channels` |
+| GET | `/admin/notification-channels/{channel_id}` |
+| POST | `/admin/notification-channels/{channel_id}/probe` |
+| PATCH | `/admin/notification-channels/{channel_id}` |
+| POST | `/admin/notification-channels/{channel_id}/enable` |
+| POST | `/admin/notification-channels/{channel_id}/disable` |
+| POST | `/admin/notification-channels/{channel_id}/retire` |
+| GET | `/notification-channels` |
+| PUT | `/notification-channels/{channel_id}/binding` |
+| POST | `/notification-channels/{channel_id}/verify-address` |
+| DELETE | `/notification-channels/{channel_id}/binding` |
 
 ## `notifications.py`
 
@@ -1262,4 +1305,4 @@
 
 ---
 
-_共 118 模块 / 755 路由_
+_共 121 模块 / 783 路由_
