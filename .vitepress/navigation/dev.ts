@@ -25,6 +25,10 @@ export const devSidebar: DefaultTheme.SidebarItem[] = [
           text: "实例分割在线学习验收",
           link: "/dev/how-to/validate-segmentation-online-learning",
         },
+        {
+          text: "开发自定义训练器插件",
+          link: "/dev/how-to/trainer-plugins",
+        },
         { text: "调试 WebSocket", link: "/dev/how-to/debug-websocket" },
         { text: "按需截图与录屏", link: "/dev/how-to/update-screenshots" },
         { text: "更新 Excalidraw 图表", link: "/dev/how-to/update-excalidraw-diagrams" },

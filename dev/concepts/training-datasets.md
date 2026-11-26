@@ -36,7 +36,7 @@ last_reviewed: 2026-11-26
 为确保高并发生产环境下的稳定性与数据一致性，在线学习体系遵循四项根本设计原则：
 
 - **不可变快照与版本确定性**：数据版本一经发布即进入只读状态，历史快照、标签文件与 ZIP 清单永不原地篡改。所有派生分析与后续训练引用均绑定完整 SHA-256 摘要。
-- **插件化训练器与无 ML 依赖监督器**：平台核心与 `training-supervisor` 不包含任何 PyTorch、CUDA 或具体训练框架依赖。每个训练器插件独立封装在只读非 root 镜像中，采用 `yoao-extension-manifest/v1` 与 `yoao-trainer/v1` 协议；注册表 `yoao_learning_v1.trainer_plugins` 强制“发现不等于资格”，管理员完成能力核验与资格导入后方可启用。监督器通过持久 `/state` 文件锁、先落盘后启动与启动期孤儿容器对账确保同一物理 GPU UUID 严格互斥，并支持 `TRAINING_GPU_UUIDS` / `TRAINING_CPU_SLOTS` 多槽位并行调度不同资源。
+- **插件化训练器与无 ML 依赖监督器**：平台核心与 `training-supervisor` 不包含任何 PyTorch、CUDA 或具体训练框架依赖。每个训练器插件独立封装在只读非 root 镜像中，采用 `yoao-extension-manifest/v1` 与 `yoao-trainer/v1` 协议（自定义训练器开发与离线契约校验见[开发自定义训练器插件](../how-to/trainer-plugins)）；注册表 `yoao_learning_v1.trainer_plugins` 强制“发现不等于资格”，管理员完成能力核验与资格导入后方可启用。监督器通过持久 `/state` 文件锁、先落盘后启动与启动期孤儿容器对账确保同一物理 GPU UUID 严格互斥，并支持 `TRAINING_GPU_UUIDS` / `TRAINING_CPU_SLOTS` 多槽位并行调度不同资源。
 - **不可变 Attempt 与断点续训隔离**：失败重试或从检查点续训均沿用原任务配置，但会分配全新的 `TrainingAttempt`，新尝试绝不覆盖历史指标曲线或改写前次权重产物。
 - **严格收据协议与数据驱动回流门禁**：模型回流由训练器产出的 `serving_compatibility` 与推理插件能力声明做数据驱动匹配，推理后端与平台双向核验类别映射顺序、产物格式与运行时资格，防止标签错位或脏数据污染。
 
