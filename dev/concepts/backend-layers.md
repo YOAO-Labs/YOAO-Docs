@@ -117,7 +117,6 @@ writer lease 后处理；原始 bytes 始终保留，包括不确定提交产生
 
 | 领域子包                   | 核心职责                                                         | 内部模块分层与边界                                                                                                                                                   |
 | :------------------------- | :--------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **`gpu_arbitration/`**     | GPU 显存契约、租约账本、Redis Fence、静默卸载与抢占编排          | `contracts` / `policy` 为无环叶模块；`fences` / `proofs` / `reconciliation` / `retirement` 居中；`dispatch` / `membership_activation` / `rollout_control` 为高层编排 |
 | **`ml_routing/`**          | 服务池能力指纹、加权轮询（SWRR）、路由租约账本与排空安全校验     | `contracts` / `capability` / `policy` 为纯函数叶模块；`ledger` 维护 Redis 原子租约与被动熔断；`router` / `safety` / `diagnostics` 编排拓扑与快照                     |
 | **`video_tracking/`**      | 视频 AI 追踪适配器、分窗身份与候选暂存审阅                       | `adapter` / `job` / `runner` 单向协作，不反向耦合 WebSocket 路由                                                                                                     |
 | **`exporting/`**           | 项目/批次异步导出缓存、单飞锁与多格式归档打包                    | `cache` / `service` / 格式导出器                                                                                                                                     |
