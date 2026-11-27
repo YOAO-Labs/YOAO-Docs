@@ -3,7 +3,7 @@ title: 环境变量参考
 audience: [dev, ops]
 type: reference
 status: stable
-last_reviewed: 2026-11-27
+last_reviewed: 2026-11-28
 ---
 
 # 环境变量参考
