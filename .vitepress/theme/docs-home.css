@@ -62,22 +62,6 @@
   background-color: rgba(13, 24, 185, 0.24) !important;
   border-bottom-color: transparent !important;
 }
-.docs-home-page .VPNavBarMenu > .VPNavBarMenuLink:last-child {
-  display: flex;
-  align-items: center;
-  height: 30px;
-  margin: auto 0 auto 10px;
-  padding: 0 15px;
-  border-radius: 999px;
-  font-weight: 600;
-  transition: background-color 0.2s ease;
-  background: var(--home-paper);
-  color: var(--home-blue) !important;
-}
-.docs-home-page .VPNavBarMenu > .VPNavBarMenuLink:last-child:hover {
-  background: var(--home-acid);
-  color: var(--home-ink) !important;
-}
 .docs-home-page .VPNavBar.has-sidebar .content,
 .docs-home-page .VPNavBar .wrapper,
 .docs-home-page .VPNavBar .content-body {

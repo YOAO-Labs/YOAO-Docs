@@ -29,7 +29,7 @@ last_reviewed: 2026-10-26
 
 列表筛选、页码和详情视图通常保存在地址中，返回或刷新后可以继续查看。创建日期筛选按 UTC 日界计算，结束日期包含整天；自动填写的名称使用本地时间。
 
-需要脚本或终端操作时，可以使用 [Python SDK](../../dev/sdk/python-client#在线学习命名空间) 与 [yoao learning CLI](../../dev/sdk/cli#yoao-learning)。它们沿用相同的项目权限、预检摘要和版本冲突保护；TUI 提供训练队列、执行详情和日志监控，配置、发布与人工决策仍需明确操作。
+需要脚本或终端操作时，可以使用 [Python SDK](/sdk/python-client#在线学习命名空间) 与 [yoao learning CLI](/sdk/cli#yoao-learning)。它们沿用相同的项目权限、预检摘要和版本冲突保护；TUI 提供训练队列、执行详情和日志监控，配置、发布与人工决策仍需明确操作。
 
 ## 一轮迭代会留下什么
 
@@ -52,8 +52,8 @@ last_reviewed: 2026-10-26
 | 准备可靠的训练／验证数据，检查分割掩码            | [训练数据版本](./data-versions)         |
 | 选择任务、基础模型、初始化方式，启动或续训        | [创建与管理实验](./experiments)         |
 | 调整参数、预览增强、复用 YAML、配方与实验配置     | [训练配置与复用](./configuration)       |
-| 核对 Ultralytics 的型号、任务、完整参数和分割差异 | [Ultralytics 训练容器](./ultralytics)   |
-| 核对 LibreYOLO 的型号、任务、完整参数和回流限制   | [LibreYOLO 训练容器](./libreyolo)       |
+| 核对 Ultralytics 的型号、任务、完整参数和分割差异 | [Ultralytics 训练器插件](/plugins/official/trainer/ultralytics) |
+| 核对 LibreYOLO 的型号、任务、完整参数和回流限制   | [LibreYOLO 训练器插件](/plugins/official/trainer/libreyolo)     |
 | 理解训练／验证四张图、资源和日志                  | [训练监控与指标](./metrics)             |
 | 比较实验或在预算内搜索参数                        | [实验比较与参数搜索](./comparison)      |
 | 注册模型、启用推理服务、试用和切换默认选择        | [模型回流与默认预标](./models)          |

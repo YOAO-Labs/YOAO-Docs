@@ -83,7 +83,7 @@ HTTP 入口先提交 `AsyncJob`，再将其 UUID 同时作为 Celery 执行 ID�
 - `output_mode`
 - `batch_id`
 - `params` —— 选中 backend 的 `/setup.params` 值；worker 合并进 `/predict` context，覆盖项目级阈值兜底；无此字段时行为不变
-- `pipeline_stages` —— **多阶段编排**，声明源 + 下游 stage 列表，把单 backend 调用扩展为「检测 → 分类 / 几何分割 → 写回属性」跨 backend 流水线；缺省时与原单阶段批量预标逐字等价，完全向后兼容。形态、ROI 路由、并行兄弟语义详见 [prediction-pipeline §多阶段预标注](./prediction-pipeline#多阶段预标注pipeline_stages路径-b) 与 [ADR 0043](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/archive/0043-staged-preannotation-pipeline.md)
+- `pipeline_stages` —— **多阶段编排**，声明源 + 下游 stage 列表，把单 backend 调用扩展为「检测 → 分类 / 几何分割 → 写回属性」跨 backend 流水线；缺省时与原单阶段批量预标逐字等价，完全向后兼容。形态、ROI 路由、并行兄弟语义详见 [prediction-pipeline §多阶段预标注](./prediction-pipeline#多阶段预标注pipeline_stages路径-b) 与 [ADR 0043](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/archive/0043-staged-preannotation-pipeline.md)
 
 成功派发返回 HTTP 200 和：
 
@@ -212,7 +212,7 @@ Worker 在向物理 ML Backend 投递媒体前，不再直接对当前用途桶�
 1. `accept prediction`（候选层 → annotation）
 2. 在 prediction 基础上继续改
 3. 完全忽略 prediction，手工新建 annotation
-4. **Magic Box**：拖一个粗框 → SAM bbox prompt → 返回 polygon → 自动取紧凑外接矩形 → **直接**落 bbox（不经候选层 UI 确认）。产出按几何归 `bbox` 工具单位；交互式 AI 由项目级 `ai_interactive_enabled` 控制，详见 [ADR-0026](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/archive/0026-tool-unit-class-and-attribute-binding.md)
+4. **Magic Box**：拖一个粗框 → SAM bbox prompt → 返回 polygon → 自动取紧凑外接矩形 → **直接**落 bbox（不经候选层 UI 确认）。产出按几何归 `bbox` 工具单位；交互式 AI 由项目级 `ai_interactive_enabled` 控制，详见 [ADR-0026](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/archive/0026-tool-unit-class-and-attribute-binding.md)
 
 ### 采纳前候选属性预览 + 分步采纳
 

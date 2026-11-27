@@ -196,7 +196,7 @@ export function renderSettings(fieldsText, authText, localText) {
   }
 
   const lines = [];
-  lines.push("<!-- AUTO-GENERATED — 由 docs-site/scripts/generate-settings.mjs 从 -->");
+  lines.push("<!-- AUTO-GENERATED — 由 scripts/generate-settings.mjs 从 -->");
   lines.push(
     "<!-- apps/web/src/pages/Workbench/state/workbenchSettingsFields.ts、workbenchLocalDefaults.ts 和 -->",
   );

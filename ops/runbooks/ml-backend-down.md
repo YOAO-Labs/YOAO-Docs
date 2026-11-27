@@ -80,7 +80,7 @@ curl http://localhost:8001/health
 # 检查返回的 protocol_version 字段是否与平台要求一致
 ```
 
-对照 [ML Backend 协议](/dev/reference/ml-backend-protocol) 检查 Backend 实现。
+对照 [Inference Protocol v2](/plugins/protocols/inference-v2) 检查 Backend 实现。
 
 ### 情况 E：GPU 资源配置或影子决策异常
 
@@ -116,6 +116,6 @@ curl http://localhost:8001/health
 - [AI 预标注流水线](/user-guide/workflows/ai-preannotate-pipeline)
 - [失败预测恢复流程](/user-guide/workflows/failed-prediction-recovery)
 - [AI 模型集成](/dev/concepts/ai-models)
-- [ML Backend 协议](/dev/reference/ml-backend-protocol)
+- [Inference Protocol v2](/plugins/protocols/inference-v2)
 - [ML Backend API](/api/guides/ml-backend)
 - [Runbook: Celery Worker 卡死](/ops/runbooks/celery-worker-stuck)

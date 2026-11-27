@@ -9,16 +9,18 @@ const PUBLIC = join(ROOT, "public");
 const SITE = "https://yoao-labs.github.io/YOAO-Docs";
 const TITLE = "YOAO";
 const DESC =
-  "一站式 AI 辅助标注平台：图像 / 视频 / 点云标注、AI 预标注、质量审核、私有化部署。文档覆盖使用平台、开发者、API 与部署运维四个域。";
+  "一站式 AI 辅助标注平台：图像 / 视频 / 点云标注、AI 预标注、插件生态、质量审核、私有化部署。文档覆盖使用指南、插件生态、API、Platform API SDK、核心开发与部署运维。";
 
 const SECTIONS = [
-  { dir: "user-guide", label: "使用平台" },
-  { dir: "dev", label: "开发者" },
+  { dir: "user-guide", label: "使用指南" },
+  { dir: "plugins", label: "插件生态" },
   { dir: "api", label: "API" },
+  { dir: "sdk", label: "Platform API SDK" },
+  { dir: "dev", label: "核心开发" },
   { dir: "ops", label: "部署运维" },
 ];
 
-const SKIP = /(^|\/)(adr|changelog|roadmap)\/|_routes\.generated|\/examples\//;
+const SKIP = /(^|\/)(changelog|redirects|_sources|_yoao-source)\/|_routes\.generated|\/examples\//;
 
 function walk(dir) {
   const abs = join(ROOT, dir);

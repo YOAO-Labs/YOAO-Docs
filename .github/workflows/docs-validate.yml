@@ -10,6 +10,14 @@ on:
         description: "YOAO-Labs/YOAO git ref to check out"
         required: false
         default: "dev"
+      plugins_ref:
+        description: "YOAO-Labs/YOAO-Plugins git ref to check out"
+        required: false
+        default: "main"
+      sdk_ref:
+        description: "YOAO-Labs/Plugin-SDK git ref to check out"
+        required: false
+        default: "main"
 
 permissions:
   contents: read
@@ -19,7 +27,9 @@ jobs:
     name: Docs site validation
     runs-on: ubuntu-latest
     env:
-      YOAO_REPO_PATH: ${{ github.workspace }}/_yoao-source
+      YOAO_REPO_PATH: ${{ github.workspace }}/_sources/YOAO
+      YOAO_PLUGINS_REPO_PATH: ${{ github.workspace }}/_sources/YOAO-Plugins
+      YOAO_PLUGIN_SDK_REPO_PATH: ${{ github.workspace }}/_sources/Plugin-SDK
       DOCS_BASE: /YOAO-Docs/
     steps:
       - name: Checkout YOAO-Docs
@@ -30,24 +40,48 @@ jobs:
         with:
           repository: YOAO-Labs/YOAO
           ref: ${{ inputs.yoao_ref || 'dev' }}
-          path: _yoao-source
+          path: _sources/YOAO
+
+      - name: Checkout YOAO-Plugins source
+        uses: actions/checkout@v4
+        with:
+          repository: YOAO-Labs/YOAO-Plugins
+          ref: ${{ inputs.plugins_ref || 'main' }}
+          path: _sources/YOAO-Plugins
+
+      - name: Checkout Plugin-SDK source
+        uses: actions/checkout@v4
+        with:
+          repository: YOAO-Labs/Plugin-SDK
+          ref: ${{ inputs.sdk_ref || 'main' }}
+          path: _sources/Plugin-SDK
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "22"
 
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: |
+          pnpm install --frozen-lockfile
+          python3 -m pip install --quiet "pydantic>=2.5"
 
       - name: Materialize OpenAPI link target
         run: node scripts/sync-openapi.mjs
 
       - name: Run documentation checks
-        run: pnpm check:all
+        run: |
+          pnpm check:all
+          pnpm check:plugins-codegen
+          python3 scripts/generate-training-reference.py --check
 
       - name: Build docs site
         run: pnpm build

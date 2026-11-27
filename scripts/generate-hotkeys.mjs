@@ -106,7 +106,7 @@ for (const it of items) {
 const commonRows = items.filter((it) => it.common);
 
 const lines = [];
-lines.push("<!-- AUTO-GENERATED — 由 docs-site/scripts/generate-hotkeys.mjs 从 -->");
+lines.push("<!-- AUTO-GENERATED — 由 scripts/generate-hotkeys.mjs 从 -->");
 lines.push("<!-- apps/web/src/pages/Workbench/state/hotkeys.ts 生成。请勿手改。 -->");
 lines.push("");
 lines.push(

@@ -34,9 +34,9 @@ last_reviewed: 2026-11-23
 
 每行还展示全局注册项自带的能力快照（`supported_prompts` / `supported_trackers`）、URL、鉴权方式与 `max_concurrency` 并发闸——这些由超管在全局注册时设定，项目侧只读。
 
-> **没有可启用的模型服务？** 请超管在[模型市场 → 注册管理](../superadmin/model-market.md)确认已注册实例、已执行健康检查，且其**全局服务池**已启用。手动 URL／Token 的[直连服务](/dev/ml-backend/starter#direct-registration)也走这条路径。若项目启用返回 `ml_backend_pool_not_enabled`，请超管检查全局池，不要重复注册实例或更换 Token。
+> **没有可启用的模型服务？** 请超管在[模型市场 → 注册管理](../superadmin/model-market.md)确认已注册实例、已执行健康检查，且其**全局服务池**已启用。手动 URL／Token 的[直连服务](/plugins/protocols/http-from-scratch#direct-registration)也走这条路径。若项目启用返回 `ml_backend_pool_not_enabled`，请超管检查全局池，不要重复注册实例或更换 Token。
 
-独立推理插件即使已由超管安装，也不会自动对新项目或现有项目启用；请在此显式勾选对应服务池。安装身份、排空和安全停容器由超管管理，项目停用不等于物理实例安全退役。见[插件安装](/user-guide/superadmin/ml-backend-registry#可安装推理插件)。
+独立推理插件即使已由超管安装，也不会自动对新项目或现有项目启用；请在此显式勾选对应服务池。安装身份、排空和安全停容器由超管管理，项目停用不等于物理实例安全退役。见[安装推理插件](/plugins/manage/inference-install#可安装推理插件)。
 
 训练产物先注册为候选，再部署到已验证的兼容插件、核对类别顺序和安装收据并试用；项目负责人须人工发布，安装或试用不会自动切换默认模型。回滚历史版本也要在已验证的新插件上重新部署该版本并人工发布，不能重新激活已经退役的旧 CPU 实例。既有预测与历史收据保留。
 
@@ -72,7 +72,7 @@ last_reviewed: 2026-11-23
 - `sam3-backend`：`point` `interactive_box` `text` `exemplar`，以及 `sam3_video` / `sam3_video_interactive` 视频追踪能力
 - `yolo-backend`：`none` `text` `exemplar`（闭集检测/分割/关键点/旋转框走批量线；YOLOE 视觉提示走 Exemplar）
 
-数据来自模型服务的 `GET /setup`（详见 [开发文档 § ML Backend Protocol](../../dev/reference/ml-backend-protocol.md)）。能力显示为 `—` 时，可能是 `/setup` 不可达或协议信息不完整。
+数据来自模型服务的 `GET /setup`（详见 [Inference Protocol v2](/plugins/protocols/inference-v2)）。能力显示为 `—` 时，可能是 `/setup` 不可达或协议信息不完整。
 
 模型市场会展示更完整的模型粒度能力，包括「可接受输入」（整图 / 裁剪图 / 框提示 / 点提示）、「输出几何」、「输出属性」、资源画像和变体轴。多阶段预标会用「可接受输入」判断下游阶段能否消费上游框：分类器通常接收裁剪图，框提示分割模型通常接收框提示。
 
@@ -108,6 +108,6 @@ last_reviewed: 2026-11-23
 
 ## 相关文档
 
-- 协议契约：[ML Backend Protocol](../../dev/reference/ml-backend-protocol.md)
-- 架构决策：[ADR-0019 Prompt-first ToolDock + 1:N 架构](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/archive/0019-prompt-first-tooldock-1n-arch.md)、[ADR-0020 Capability 协商](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/archive/0020-ml-backend-capability-negotiation.md)
+- 协议契约：[Inference Protocol v2](/plugins/protocols/inference-v2)
+- 架构决策：[ADR-0019 Prompt-first ToolDock + 1:N 架构](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/archive/0019-prompt-first-tooldock-1n-arch.md)、[ADR-0020 Capability 协商](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/archive/0020-ml-backend-capability-negotiation.md)
 - 工作台侧使用：[AI 工具组](../workbench/sam-tool.md)

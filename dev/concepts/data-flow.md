@@ -51,12 +51,12 @@ API 先提交 pending `AsyncJob(kind=batch_predict)`，再以该 UUID 派发 Cel
 
 - 触发端点：`apps/api/app/api/v1/projects.py:trigger_preannotation`
 - 服务池路由与 ML client：`apps/api/app/services/ml_routing/client.py:RoutedMLBackendClient`
-- ML 协议契约：[`docs-site/dev/reference/ml-backend-protocol.md`](../reference/ml-backend-protocol)
+- ML 协议契约：[Inference Protocol v2](/plugins/protocols/inference-v2)
 - Worker：`apps/api/app/workers/tasks.py:batch_predict` 与 `apps/api/app/application/preannotation_execution.py:run_preannotation`
 - 对象存储签名 URL：`apps/api/app/services/storage.py:resolve_task_url`
 - 项目 WS 中继：`apps/api/app/api/v1/ws.py:preannotate_progress`
 - 全局 admin WS：`apps/api/app/api/v1/ws.py:prediction_jobs_socket`
-- WS 协议：[`docs-site/dev/reference/ws-protocol.md`](../reference/ws-protocol)
+- WS 协议：[`ws-protocol.md`](../reference/ws-protocol)
 
 ---
 
@@ -153,7 +153,7 @@ consumer 闭环验证前保持关闭；capability 响应不会把未验证 adapt
 - 通知服务：`apps/api/app/services/notification.py:NotificationService.notify`、`apps/api/app/services/async_job.py`
 - 通知模型：`apps/api/app/db/models/notification.py`
 - 前端 hook：`apps/web/src/hooks/useNotificationSocket.ts`
-- WS 协议详细：[`docs-site/dev/reference/ws-protocol.md`](../reference/ws-protocol)
+- WS 协议详细：[`ws-protocol.md`](../reference/ws-protocol)
 
 ---
 

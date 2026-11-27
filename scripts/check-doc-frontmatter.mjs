@@ -12,14 +12,13 @@ const DOCS_ROOT = join(__here, "..");
 const REQUIRED_FIELDS = ["audience", "type", "status", "last_reviewed"];
 const SKIP_ROOTS = new Set([
   ".vitepress",
+  "_sources",
   "changelog",
-  "dev/adr",
   "dev/examples",
   "maintainers",
   "node_modules",
   "public",
   "redirects",
-  "roadmap",
   "scripts",
   "_yoao-source",
 ]);

@@ -12,7 +12,7 @@ export function emitGenerated({ dst, content, label, detail }) {
     if (current !== content) {
       console.error(
         `[${label}] ✗ ${dst} 与源不一致——源已改但未重新生成。\n` +
-          `  运行 \`pnpm docs:gen\`(或对应 generate 脚本)后把生成文件一并提交。`,
+          `  运行 \`pnpm gen\`(或对应 generate 脚本)后把生成文件一并提交。`,
       );
       process.exit(1);
     }

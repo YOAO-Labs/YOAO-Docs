@@ -66,7 +66,7 @@ HTTP 400 `invalid_request`；错误 bearer 返回 401。配置数据源后 `/rea
 
 成功 envelope 为 `schema/ok/data`，其中 `ok: true`，`data` 严格包含 `id`、`name`、`email`、`role`、`is_active: true` 与 nullable int32 `weekly_target_default`。name/email 保留数据库原值；响应不含偏好、头像、密码或凭据。API 将返回的 `id`、`role` 和 active 状态绑定到本次准入结果。失败 envelope 的 `error.code` 只能是 `invalid_request` 或 `credential_invalid`。私有接口对 `invalid_request` 返回 HTTP 400，对 `credential_invalid` 返回 HTTP 200 的失败封套；账号缺失、停用或精确 role 不匹配由 API 映射到现有 401 和 Bearer challenge。owner 未配置／不可用、超时、响应损坏或绑定不符映射到现有 503，不回退 API ORM。
 
-`yoao_identity_v1.read_actor_context(uuid,text)` 使用既有 AUTH LOGIN，缺少该权限时 `/ready` 和读取均失败。函数不取锁、不写 Audit 或回执，沿用 AUTH 的超时、并发槽和请求体限制。内嵌 reader 借用调用方事务并遵循 `autoflush`／`no_autoflush`，不提交也不回滚；专用 AUTH binding 自持有界只读事务。API key 的既有提交点、过期、generation、revocation、scope 和 last-used 不变。当前账号锁和 ORM mutation synchronization 仍由写入方负责。验收见 [ADR-0130](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0130-identity-post-admission-actor-context.md)。
+`yoao_identity_v1.read_actor_context(uuid,text)` 使用既有 AUTH LOGIN，缺少该权限时 `/ready` 和读取均失败。函数不取锁、不写 Audit 或回执，沿用 AUTH 的超时、并发槽和请求体限制。内嵌 reader 借用调用方事务并遵循 `autoflush`／`no_autoflush`，不提交也不回滚；专用 AUTH binding 自持有界只读事务。API key 的既有提交点、过期、generation、revocation、scope 和 last-used 不变。当前账号锁和 ORM mutation synchronization 仍由写入方负责。验收见 [ADR-0130](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0130-identity-post-admission-actor-context.md)。
 
 ## 调用方事务内的账号事实锁
 
@@ -76,7 +76,7 @@ Migration 0251 在 `yoao_identity_v1` 提供三项安全函数：`lock_accounts_
 
 账号事实锁必须遵守账号 → Project → membership → resource 的既有顺序，保留每个调用方的 SHARE/UPDATE/KEY SHARE 和 NOWAIT/wait 选择。API 依旧由 caller 映射错误：单账号竞争保持 `account_busy`，账号／项目联合 guard 保持 `project_busy`，Project access 分别区分账号、项目、成员争用。`UserLifecycleService.lock_accounts` 对所有 DBAPIError 显式回滚并保留 `账号正在更新，请刷新后重试` 的旧 409 文案；其他调用方由原事务所有者决定回滚，不能在共享数据端口统一处理。
 
-跨帧 worker 每个待写帧都重新锁定并核对当前账号与项目、成员、任务权限，不用跨帧快照或 `db.refresh(User)` 替代。忙碌仍映射为 `permission_changed`，不重试；删除、停用、基础设施失败与阶段拒绝保持区别。验收见 [ADR-0131](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0131-identity-transactional-account-locks.md)。
+跨帧 worker 每个待写帧都重新锁定并核对当前账号与项目、成员、任务权限，不用跨帧快照或 `db.refresh(User)` 替代。忙碌仍映射为 `permission_changed`，不重试；删除、停用、基础设施失败与阶段拒绝保持区别。验收见 [ADR-0131](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0131-identity-transactional-account-locks.md)。
 
 ## Identity 运维数据入口
 
@@ -136,7 +136,7 @@ key 元数据只有 `id`、`name`、`key_prefix`、`scopes`、`expires_at`、`la
 
 登录计数使用独立 Redis 身份，只允许 `login_failed:*` 上的 GET／INCRBY／EXPIRE／DEL 及必要连接命令，不访问业务缓存、broker 或 Pub/Sub。
 配置与复验见[模块边界定向验收](/dev/testing#module-boundary-acceptance)；secret 轮换见
-[ADR-0116](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0116-independent-identity-key-commands.md)和 [ADR-0117](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0117-independent-identity-session-commands.md)。
+[ADR-0116](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0116-independent-identity-key-commands.md)和 [ADR-0117](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0117-independent-identity-session-commands.md)。
 
 ## 核心会话请求
 
@@ -181,7 +181,7 @@ API 保留通用限流和 Turnstile 验证，提供方重新检查失败计数�
 
 所有者在一条连接上先准备并锁定 User，再检查当前 JTI／代次／有效期或 API key hash，运行完整偏好策略或 bcrypt，最后重新检查并提交。偏好等待最新行后合并；其他写入保留非等待竞争。名称／偏好／密码／头像修改的成功回执与状态、业务审计共同提交。名称／头像 no-op 不重复业务审计，自助改密清除管理员重置标记，仍不推进 JWT 代次或撤销 API key。
 
-私有调用方固定操作 UUID 与输入后，可在丢响应、重启或恢复数据库后取回冻结结果。重放需要当前有效凭据，不能用已过期／撤销的凭据读取回执；可用同一账号的其他有效凭据。它不重新检查已失效的旧密码、不重复修改或审计、不回退当前偏好和头像。冻结 account 的名称／角色／邮箱可能早于当前 principal。HMAC 指纹、epoch 和保留回执的降级规则见 [ADR-0118](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0118-independent-identity-account-commands.md)。公开接口没有新增自动重试或幂等 header。
+私有调用方固定操作 UUID 与输入后，可在丢响应、重启或恢复数据库后取回冻结结果。重放需要当前有效凭据，不能用已过期／撤销的凭据读取回执；可用同一账号的其他有效凭据。它不重新检查已失效的旧密码、不重复修改或审计、不回退当前偏好和头像。冻结 account 的名称／角色／邮箱可能早于当前 principal。HMAC 指纹、epoch 和保留回执的降级规则见 [ADR-0118](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0118-independent-identity-account-commands.md)。公开接口没有新增自动重试或幂等 header。
 
 账户角色只有 `account_policy`、`prepare_account_command`、`apply_account_command` 三函数；扫描角色只有 `mark_inactive_accounts_offline`。扫描请求是 `{schema:"aap-identity-presence/v1",cutoff:"带时区时间"}`，成功响应为相同 schema 和严格非负 64 位 affected。它保留 `online AND (last_seen_at IS NULL OR last_seen_at < cutoff)`，不新增 active 过滤。就绪检查只查询权限，不执行扫描。
 
@@ -218,7 +218,7 @@ Identity 的 GROUP LOGIN 只有 `group_policy()` 与 `execute_group_command(json
 
 API 可设置 `IDENTITY_GROUP_DATABASE_URL` 或 `IDENTITY_GROUP_DATABASE_URL_FILE`；独立 Identity runtime 读取同名的 `IDENTITY_GROUP_DATABASE_URL(_FILE)` 配置。省略 DSN 时使用内嵌调用方事务；显式配置的 DSN 失败时返回不可用，不切换到其他写入者。Compose 用宿主机 `IDENTITY_RUNTIME_GROUP_DATABASE_URL_FILE` 选择文件，并在容器内挂载为 `IDENTITY_GROUP_DATABASE_URL_FILE`。专用 DSN 必须指向同一个 PostgreSQL 数据库，由它承载 Workspace scope function 和 Identity group schema。
 
-此前 group slice 只通过私有 `resolve_invitation_group(uuid,text)` helper 兼容旧邀请 coordinator；该 helper 仍由 Identity 内部调用，不公开为操作，也没有授予 GROUP LOGIN。现在完整邀请 lifecycle 使用独立的 `aap-identity-invitations/v1` owner；它保留 Public HTTP 与 workspace membership 边界，详见下一节及 [ADR-0122](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0122-independent-identity-invitations-and-mail-v2.md)。分组的查询/指派协议与当前 scope 仍见 [ADR-0120](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0120-independent-identity-group-catalog-and-assignment.md)。
+此前 group slice 只通过私有 `resolve_invitation_group(uuid,text)` helper 兼容旧邀请 coordinator；该 helper 仍由 Identity 内部调用，不公开为操作，也没有授予 GROUP LOGIN。现在完整邀请 lifecycle 使用独立的 `aap-identity-invitations/v1` owner；它保留 Public HTTP 与 workspace membership 边界，详见下一节及 [ADR-0122](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0122-independent-identity-invitations-and-mail-v2.md)。分组的查询/指派协议与当前 scope 仍见 [ADR-0120](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0120-independent-identity-group-catalog-and-assignment.md)。
 
 ## 邀请生命周期
 
@@ -266,7 +266,7 @@ V2 claim／renew／finish 在发送前后重新校验当前 invitation token has
 
 默认邀请命令走调用方事务，显式 `IDENTITY_INVITATION_DATABASE_URL(_FILE)` 必须指向和 sender 相同的业务数据库，配置错误不回退。API 与私有 issuer 都不发邮件，也不发送 Celery kick；sender 独立轮询已提交意图。等待上限 `IDENTITY_INVITATION_MAIL_TIMEOUT_SECONDS` 默认 60 秒、必须 >0 且 ≤120。Runtime 邀请链接默认 `IDENTITY_INVITATION_FRONTEND_BASE_URL=http://localhost:5173`，系统 `frontend_base_url` 可覆盖；恢复默认 `http://localhost:3000` 不变。部署和迁移见[独立账号邮件执行](#独立账号邮件执行)。
 
-邀请与 MailV2 的运行资格见 [ADR-0122](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0122-independent-identity-invitations-and-mail-v2.md)，不等于整模块或生产验收。
+邀请与 MailV2 的运行资格见 [ADR-0122](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0122-independent-identity-invitations-and-mail-v2.md)，不等于整模块或生产验收。
 
 ## 用户目录读取
 
@@ -297,7 +297,7 @@ Native protocol 是 `aap-identity-directory-native/v1`，policy schema/protocol 
 
 Migration 0243 创建目标 schema `yoao_identity_directory_v1`。API 与 Identity runtime 通过 `IDENTITY_DIRECTORY_DATABASE_URL` 或 `IDENTITY_DIRECTORY_DATABASE_URL_FILE` 选择此函数 owner。可选 Compose host selector 是 `IDENTITY_RUNTIME_DIRECTORY_DATABASE_URL_FILE`，容器内映射为 `IDENTITY_DIRECTORY_DATABASE_URL_FILE`。selector 留空会关闭 Directory，私有路由返回 503，既有 Identity Compose service 仍能启动；只有启用 Directory 时才配置该 secret file。显式 DSN 连接失败不回退 API ORM。平台角色变更、管理员重置密码、deactivate/delete/offboarding/reactivation、bootstrap/import 和 dashboard analytics 不属于这四项读取。
 
-设计与隔离验收见 [ADR-0123](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0123-independent-identity-directory-reads.md)，其中的样本不是生产容量或 SLO。
+设计与隔离验收见 [ADR-0123](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0123-independent-identity-directory-reads.md)，其中的样本不是生产容量或 SLO。
 
 ## 内部批量 UserBrief 读取 {#identity-user-briefs}
 
@@ -309,11 +309,11 @@ Wire success 的 data 是 `{project_id: UUID|null,users:[UserBrief,...]}`：全�
 
 Native schema `aap-identity-briefs-native/v1` 使用同操作与 payload，只返回 `id/name/email/role/avatar_ref` 五个 source 字段；Identity Python owner 计算 initial 并在嵌入式或远程路径都验证 owner envelope、scope、ID 子集与输出形状。当前数据库能力位于 `yoao_identity_briefs_v1`：历史 0249 安装文件保留原 schema 与函数体，由前向迁移切换名称后，专用 LOGIN `yoao_identity_briefs_client` 只获 `briefs_policy()` 与 `execute_briefs_command(jsonb)` 两项函数权限。Workspace 仅暴露 `identity_brief_project_roles(project_id,user_ids)`，不授权读取 ProjectMember 原表。
 
-`IDENTITY_BRIEFS_DATABASE_URL(_FILE)` 二选一，留空沿用 caller Session。`IDENTITY_URL` 优先走私有 HTTP；独立 runtime 的 DSN 留空则关闭本能力。Compose 使用 `IDENTITY_RUNTIME_BRIEFS_DATABASE_URL_FILE`。内嵌绑定不提交或回滚，只在允许 `autoflush` 时 flush；专用 asyncpg 绑定自行持有只读事务，每次调用后关闭连接。证据见 [ADR-0129](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0129-identity-batched-user-brief-reads.md)。
+`IDENTITY_BRIEFS_DATABASE_URL(_FILE)` 二选一，留空沿用 caller Session。`IDENTITY_URL` 优先走私有 HTTP；独立 runtime 的 DSN 留空则关闭本能力。Compose 使用 `IDENTITY_RUNTIME_BRIEFS_DATABASE_URL_FILE`。内嵌绑定不提交或回滚，只在允许 `autoflush` 时 flush；专用 asyncpg 绑定自行持有只读事务，每次调用后关闭连接。证据见 [ADR-0129](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0129-identity-batched-user-brief-reads.md)。
 
-`projects.list_members` 先授权并选定 Workspace 成员行，再一次批量调用全局 `resolve_briefs`。全局 role 填入 `platform_role`，成员 role 仍表示项目职责。不输出 `avatar_initial`；空列表不查询，缺失用户省略，单项转换遇缺失目标或历史非法 `platform_role` 保留 `ValidationError`。远程组合不保证共用数据库快照。见 [ADR-0129 成员列表消费者](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0129-identity-batched-user-brief-reads.md#project-member-list-consumer)。
+`projects.list_members` 先授权并选定 Workspace 成员行，再一次批量调用全局 `resolve_briefs`。全局 role 填入 `platform_role`，成员 role 仍表示项目职责。不输出 `avatar_initial`；空列表不查询，缺失用户省略，单项转换遇缺失目标或历史非法 `platform_role` 保留 `ValidationError`。远程组合不保证共用数据库快照。见 [ADR-0129 成员列表消费者](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0129-identity-batched-user-brief-reads.md#project-member-list-consumer)。
 
-Project owner 展示复用全局 `resolve_briefs`，不参与授权，只填充 `ProjectOut.owner_name`／`owner_avatar_ref`。缺失资料仍为两个 `null`，保留历史或停用 owner；不改 `owner_id`、公开 schema 或项目角色。列表先授权、筛选和分页，再批量读取本页 owner；复用同一 owner，空页不查询，传入空结果不触发逐项再查。创建、详情、patch、改名与转移在原授权与提交位置查询非空 owner ID 一次。Dataset-linked 列表仍保留 null 展示字段。见 [ADR-0129 项目 owner 展示](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0129-identity-batched-user-brief-reads.md#project-owner-display-consumer)。
+Project owner 展示复用全局 `resolve_briefs`，不参与授权，只填充 `ProjectOut.owner_name`／`owner_avatar_ref`。缺失资料仍为两个 `null`，保留历史或停用 owner；不改 `owner_id`、公开 schema 或项目角色。列表先授权、筛选和分页，再批量读取本页 owner；复用同一 owner，空页不查询，传入空结果不触发逐项再查。创建、详情、patch、改名与转移在原授权与提交位置查询非空 owner ID 一次。Dataset-linked 列表仍保留 null 展示字段。见 [ADR-0129 项目 owner 展示](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0129-identity-batched-user-brief-reads.md#project-owner-display-consumer)。
 
 ## 管理员临时密码重置
 
@@ -339,17 +339,17 @@ Malformed／unknown／duplicate／extra fields、alias 字段、secret echo 或�
 
 先按 UUID 顺序 `FOR UPDATE NOWAIT` 锁 actor 与 target User，再复核 actor 当前启用状态、manager role 和 credential。Project-admin scope 随后经 Workspace 窄布尔 capability 锁定 Project（UUID 顺序）后锁 membership 并重查 owner/scope，锁持有到调用事务结束；争用 409 `account_busy`。Identity 不读 Workspace 原表，也不调用 Labeling。变更的 password hash、`password_admin_reset_at`、typed Audit 与 receipt 原子提交。Audit 只记录 `user.password_admin_reset`（status 200、target_type user、target_id UUID），detail 精确为 `target_email/target_role`；不记录密码。重置不改变 JWT generation 或 API key，self password change 仍会清 marker。
 
-密码按 signing secret 的独立 HMAC 域 `aap-identity-admin-passwords/v1` 确定性派生，以复用私有 operation UUID 支持响应丢失后确认；每次 public invocation 都生成新 UUID，不增加公开幂等 header，也不自动 transport retry。Bcrypt-12 计算在 SQL 锁外进行。Migration 0244 的 immutable receipt 不存明文或可用 bcrypt hash，也不新增 User 列或触发器；Native 以 operation UUID 绑定的 `password_state_fingerprint` 加 `password_admin_reset_at` 共同验证当前密码状态。自改密、恢复流程或后续重置会使旧结果返回 409，避免重放已失效的临时密码；同 signing secret 的 backup/restore 可重放，epoch 变化冲突。完整派生 stream、HMAC fingerprint 与 receipt fence 见 [ADR-0124](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0124-independent-identity-admin-password-reset.md)。
+密码按 signing secret 的独立 HMAC 域 `aap-identity-admin-passwords/v1` 确定性派生，以复用私有 operation UUID 支持响应丢失后确认；每次 public invocation 都生成新 UUID，不增加公开幂等 header，也不自动 transport retry。Bcrypt-12 计算在 SQL 锁外进行。Migration 0244 的 immutable receipt 不存明文或可用 bcrypt hash，也不新增 User 列或触发器；Native 以 operation UUID 绑定的 `password_state_fingerprint` 加 `password_admin_reset_at` 共同验证当前密码状态。自改密、恢复流程或后续重置会使旧结果返回 409，避免重放已失效的临时密码；同 signing secret 的 backup/restore 可重放，epoch 变化冲突。完整派生 stream、HMAC fingerprint 与 receipt fence 见 [ADR-0124](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0124-independent-identity-admin-password-reset.md)。
 
 Migration 0244 创建 `yoao_identity_admin_passwords_v1`。`yoao_identity_admin_password_client` LOGIN 仅可执行 `admin_password_policy()` 和 `execute_admin_password_command(jsonb)`，没有 table/column/sequence/DDL 或 foreign-schema 权限。API/runtime 可选 `IDENTITY_ADMIN_PASSWORD_DATABASE_URL` 或 `IDENTITY_ADMIN_PASSWORD_DATABASE_URL_FILE`；Compose host selector 是 `IDENTITY_RUNTIME_ADMIN_PASSWORD_DATABASE_URL_FILE`。selector 留空只关闭该 capability、私有路由返回 503，不影响既有 Identity service 启动；显式 DSN 故障不回退 ORM。
 
-本地数据库与进程验收见 [ADR-0124](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0124-independent-identity-admin-password-reset.md)。不覆盖其他账号写入、主认证切换或生产容量。
+本地数据库与进程验收见 [ADR-0124](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0124-independent-identity-admin-password-reset.md)。不覆盖其他账号写入、主认证切换或生产容量。
 
 ## 平台角色预览与变更
 
 本 owner slice 只迁移两个超级管理员路由：`GET /api/v1/users/{user_id}/role/preview?role=...` 与 `PATCH /api/v1/users/{user_id}/role`。方法、路径、既有 `RoleImpactPreview`／用户响应、errors、SDK／CLI 行为保持不变，没有 public CAS 或幂等 header。Preview 的 `user_id` 保持 UUID、`role` 是必填且 `min_length=1` 的字符串；Mutation 的 path 参数继续是字符串，body 是 `RoleChangePayload`，extra fields 继续被忽略，非法 mutation UUID 仍返回 404。请求角色只接受 `super_admin`、`project_admin`、`employee`、`viewer`；不 trim／lowercase，也不增加任意短长度上限。非法值返回 400 `非法平台角色: {role}`，缺失／停用目标 404 `用户不存在`，修改自己 400 `不能修改自己的角色`。Current actor 必须仍是 active super-admin，否则 403 `当前账号已无管理权限`。
 
-私有 endpoint 是 `POST /v1/identity/platform-roles/execute`，协议 `aap-identity-platform-roles/v1`，operations 为 `preview_role_change` 与 `change_platform_role`。Wire request 精确为 `schema/operation/operation_id/token/audit_context/payload`，payload 是 `{target_user_id,role}`；raw token 隐藏，actor 只能由当前凭据解析。Native request 精确有 `schema/operation/operation_id/actor/expected_key_hash/request_fingerprint/derivation_id/audit_context/payload`；API-key `expected_key_hash` 保持 opaque 1–255 字符。Native success 多一个严格 boolean `replayed`。完整 schema、错误与 receipt 约束见 [ADR-0125](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0125-independent-identity-platform-role-commands.md)。
+私有 endpoint 是 `POST /v1/identity/platform-roles/execute`，协议 `aap-identity-platform-roles/v1`，operations 为 `preview_role_change` 与 `change_platform_role`。Wire request 精确为 `schema/operation/operation_id/token/audit_context/payload`，payload 是 `{target_user_id,role}`；raw token 隐藏，actor 只能由当前凭据解析。Native request 精确有 `schema/operation/operation_id/actor/expected_key_hash/request_fingerprint/derivation_id/audit_context/payload`；API-key `expected_key_hash` 保持 opaque 1–255 字符。Native success 多一个严格 boolean `replayed`。完整 schema、错误与 receipt 约束见 [ADR-0125](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0125-independent-identity-platform-role-commands.md)。
 
 Preview data 精确有 12 个字段：`user_id/email/current_role/requested_role/can_change/blockers/projects/assigned_batch_count/assigned_task_count/review_task_count/other_project_count/warnings`。项目行精确包含 `project_id/project_name/membership_role/annotator_batch_count/reviewer_batch_count/assigned_task_count/review_task_count`，其中 membership role 可为 null。项目是 target 的成员项目，按 project name、UUID 排序，不加 status/archive 筛选；所有状态都计入展示 counts，且只按 batch annotator/reviewer 与 Task assignee/reviewer 的直接 assignment 计数，不套用 blocker 的 COALESCE fallback。同一 batch 同时占两个角色槽位会计两次；总数只汇总成员项目，不与 viewer blocker 计数混用。`other_project_count` 对当前 super-admin-only surface 固定为 0。Warnings 固定为：
 
@@ -382,7 +382,7 @@ Identity authentication errors keep their established codes with null status/det
 
 Workspace 的 `identity_platform_role_facts(target UUID)` 返回封闭 `schema/target_user_id/owned_project_count/non_viewer_membership_count/membership_projects`，每个项目只有 `project_id/project_name/membership_role`，按 project name/UUID 排序；raw membership count 不改成 join 后数量。`lock_identity_platform_role_owned_projects(target UUID)` 仅在真实角色变更前锁 target-owned projects 并返回 strict boolean；同角色 no-op 与 preview 不取此锁。Labeling 的 `identity_platform_role_facts(target UUID, ordered_membership_project_ids UUID[])` 一次返回 `schema/target_user_id/unfinished_effective_work_count/membership_projects`，每项只有 `project_id/annotator_batch_count/reviewer_batch_count/assigned_task_count/review_task_count`，同序且包含零计数。封闭 projection schema 分别为 `platform_role_workspace_facts.schema.json`（`aap-workspace-identity-platform-role-facts/v1`）与 `platform_role_labeling_facts.schema.json`（`aap-labeling-identity-platform-role-facts/v1`）；Identity 不读取 Workspace／Labeling 原表，Labeling 也不反向调用 Workspace，Audit 只授予当前角色事件的 typed write。Project facts、blockers、counts 与 last-SA 读取符合各自的 snapshot/lock 顺序要求。
 
-Migration 0245 创建 `yoao_identity_platform_roles_v1`。`yoao_identity_platform_role_client` LOGIN 仅能执行 `platform_role_policy()` 与 `execute_platform_role_command(jsonb)`。API/runtime 可选 `IDENTITY_PLATFORM_ROLE_DATABASE_URL(_FILE)`，Compose host selector 为 `IDENTITY_RUNTIME_PLATFORM_ROLE_DATABASE_URL_FILE`；留空只关闭此 capability、route 返回 503，既有 Identity service 仍可启动。API 直接 DSN 必须先调用 policy/readiness；显式 DSN 故障不回退 ORM。56 个选定 DB/process cases（48 Native/旧 API、5 restore、3 live）全部通过、零跳过；installed package 94 个 `.py`/`.json` 文件 hash 匹配，source 与 installed suites 各 447 项通过。API/architecture 499 项通过、127 条明确延期；Node 22 self-check 与 SDK 35 项通过。禁网、只读、1 CPU/512 MiB API cold image `sha256:a49450a0b203a3f05f68c6de058cd61d7d84d66cfd2b9384265ce3d8adbb6ca9` 用时 38.894 秒，核验 94 个 package 文件、89 个 API/native inputs、两条 role routes、既有 owner 路由数量、OpenAPI、migration head 0245 和已退役 helper absence。12 个 target、并发 4 的 host-process execute/replay sample 包含 Node/HTTP 开销，不构成生产容量或 SLO；细节见 [ADR-0125](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0125-independent-identity-platform-role-commands.md)。这些 evidence 只限定本 owner slice，不与 admin-reset 或 Directory qualification 合并，也不代表全 Identity／生产切换完成。
+Migration 0245 创建 `yoao_identity_platform_roles_v1`。`yoao_identity_platform_role_client` LOGIN 仅能执行 `platform_role_policy()` 与 `execute_platform_role_command(jsonb)`。API/runtime 可选 `IDENTITY_PLATFORM_ROLE_DATABASE_URL(_FILE)`，Compose host selector 为 `IDENTITY_RUNTIME_PLATFORM_ROLE_DATABASE_URL_FILE`；留空只关闭此 capability、route 返回 503，既有 Identity service 仍可启动。API 直接 DSN 必须先调用 policy/readiness；显式 DSN 故障不回退 ORM。56 个选定 DB/process cases（48 Native/旧 API、5 restore、3 live）全部通过、零跳过；installed package 94 个 `.py`/`.json` 文件 hash 匹配，source 与 installed suites 各 447 项通过。API/architecture 499 项通过、127 条明确延期；Node 22 self-check 与 SDK 35 项通过。禁网、只读、1 CPU/512 MiB API cold image `sha256:a49450a0b203a3f05f68c6de058cd61d7d84d66cfd2b9384265ce3d8adbb6ca9` 用时 38.894 秒，核验 94 个 package 文件、89 个 API/native inputs、两条 role routes、既有 owner 路由数量、OpenAPI、migration head 0245 和已退役 helper absence。12 个 target、并发 4 的 host-process execute/replay sample 包含 Node/HTTP 开销，不构成生产容量或 SLO；细节见 [ADR-0125](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0125-independent-identity-platform-role-commands.md)。这些 evidence 只限定本 owner slice，不与 admin-reset 或 Directory qualification 合并，也不代表全 Identity／生产切换完成。
 
 ## 管理员停用与恢复账号
 
@@ -426,13 +426,13 @@ Native schema `aap-identity-suspensions-native/v1` uses the distinct HMAC domain
 
 Successful suspend—including inactive-target no-op—and successful reactivate have immutable receipts storing the accepted `{user: ...}`, nullable Audit ID and target generation/active flag, never raw reason/token/hash/credential/Principal/live User FK. Replay authenticates the current manager and rechecks the original target authority branch. Inactive-suspend early return remains before project-admin role/scope checks, including on replay; project-admin reactivation still rechecks its current project scope. A changed target generation or active flag returns 409 `operation_conflict`; otherwise return the frozen record without new retirement/write/Audit. Populated receipts block downgrade.
 
-Migration 0246 creates `yoao_identity_suspensions_v1` and `public.identity_suspension_operation_receipts`. `yoao_identity_suspension_client` LOGIN has only `suspension_policy()` and `execute_suspension_command(jsonb)`; API direct DSN must pass policy/readiness first. API/runtime optional variables are `IDENTITY_SUSPENSION_DATABASE_URL(_FILE)`; Compose host selector is `IDENTITY_RUNTIME_SUSPENSION_DATABASE_URL_FILE`. A blank selector disables just this capability and returns 503 without blocking existing Identity startup; explicit failures do not fall back. The owner has local qualification: 77 distinct selected database/process cases passed with zero skips (73 database/restore and four live), source and installed package suites each passed 468 tests, and 99 installed package hashes match. API architecture passed 543 checks with 128 explicit deferrals; Node passed 46 checks and SDK passed 35. The cold API image passed; exact image hashes, route/input coverage and host-sample limits are in [ADR-0126](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0126-independent-identity-suspension-commands.md). This does not change the separate self-deactivation workflow or qualify full Identity, production capacity or cutover.
+Migration 0246 creates `yoao_identity_suspensions_v1` and `public.identity_suspension_operation_receipts`. `yoao_identity_suspension_client` LOGIN has only `suspension_policy()` and `execute_suspension_command(jsonb)`; API direct DSN must pass policy/readiness first. API/runtime optional variables are `IDENTITY_SUSPENSION_DATABASE_URL(_FILE)`; Compose host selector is `IDENTITY_RUNTIME_SUSPENSION_DATABASE_URL_FILE`. A blank selector disables just this capability and returns 503 without blocking existing Identity startup; explicit failures do not fall back. The owner has local qualification: 77 distinct selected database/process cases passed with zero skips (73 database/restore and four live), source and installed package suites each passed 468 tests, and 99 installed package hashes match. API architecture passed 543 checks with 128 explicit deferrals; Node passed 46 checks and SDK passed 35. The cold API image passed; exact image hashes, route/input coverage and host-sample limits are in [ADR-0126](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0126-independent-identity-suspension-commands.md). This does not change the separate self-deactivation workflow or qualify full Identity, production capacity or cutover.
 
 ## 管理员删除账号
 
 此 owner slice 只覆盖管理员 `DELETE /api/v1/users/{user_id}`。保留公开字符串 path、malformed UUID 404、可空 `DeleteUserPayload` 与 `transfer_to_user_id`、忽略 extra fields、现有 manager 权限、errors 和 21 字段 `UserOut`。每次公开调用仍使用新的 private operation UUID，不增加 replay header。
 
-私有 endpoint 为 `POST /v1/identity/deletions/execute`，operation 是 `delete_account`，wire schema 为 `aap-identity-deletions/v1`。Wire request 精确含 `schema/operation/operation_id/token/audit_context/payload`；payload 是 `{target_user_id,transfer_to_user_id}`，公开请求省略 receiver 时也会规范化为 null。Native schema 为 `aap-identity-deletions-native/v1`，由认证 actor 与 credential binding 替代 token。HMAC 使用独立 `aap-identity-deletions/v1` domain，不纳入 Audit context。冻结字段 schema、closed errors 与 replay 顺序见 [ADR-0127](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0127-independent-identity-deletion-commands.md)。
+私有 endpoint 为 `POST /v1/identity/deletions/execute`，operation 是 `delete_account`，wire schema 为 `aap-identity-deletions/v1`。Wire request 精确含 `schema/operation/operation_id/token/audit_context/payload`；payload 是 `{target_user_id,transfer_to_user_id}`，公开请求省略 receiver 时也会规范化为 null。Native schema 为 `aap-identity-deletions-native/v1`，由认证 actor 与 credential binding 替代 token。HMAC 使用独立 `aap-identity-deletions/v1` domain，不纳入 Audit context。冻结字段 schema、closed errors 与 replay 顺序见 [ADR-0127](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0127-independent-identity-deletion-commands.md)。
 
 Owner 在共享 last-super-admin fence 后，按 UUID 顺序锁 actor、target 与可选 receiver User，并在锁内重新验证当前 active manager 和 credential。Current manager check 先于 target lookup；target missing 返回 404，self-delete 返回 400。之后 inactive target 返回完整当前 record no-op，不执行 role/project/receiver/work 检查、Audit 或修改。Active target 锁全部 derived Projects；PA 只可删除 employee，空集合允许，非空时每个 Project 都须由 actor 管理；旧 active-employee manages-target helper 在此分支不增加成员关系要求。完成该 scope 检查后再保留 last-unreserved-super-admin 围栏。首次准入凭据已停用仍返回 401；准入后才失活的 actor 保持旧 public 403。
 
@@ -440,13 +440,13 @@ Owner 在共享 last-super-admin fence 后，按 UUID 顺序锁 actor、target �
 
 DELETE 保留与 suspend/reactivate 不同的凭据行为：写 inactive/offline/deleted metadata，但不推进 generation、不改 API-key revoke state、reset-link use state 或 JWT/JTI。已接受的 self-deactivation fields 保持不变。Typed Audit helper 先清除 target 历史行的 `actor_email`／`actor_role` 并捕获数量，再 INSERT 固定 `USER_DELETE`；仅数量非零时在新 Audit detail 嵌入 `redacted_audit_rows`，不增加 `detail_json` UPDATE 权限。既有行的 actor ID、detail、IP 和 target 保留；该历史 actor redaction 不是完整擦除。成功删除和 inactive no-op 都冻结 receipt；重放重新认证当前 manager、核对 target generation/active state，匹配时返回冻结响应，不重复转交、释放 TaskLock、Audit 或脱敏；target 后续变化返回 `operation_conflict`。
 
-Migration 0247 与 `yoao_identity_deletion_client` 只开放 `deletion_policy()` 和 `execute_deletion_command(jsonb)`。API/runtime 可选 `IDENTITY_DELETION_DATABASE_URL(_FILE)`；Compose host selector 为 `IDENTITY_RUNTIME_DELETION_DATABASE_URL_FILE`。Selector 留空只关闭本 capability，private route 返回 503；显式 DSN 必须通过 readiness，失败不 fallback。Root 的最终最新用例并集通过 72 个 selected acceptance cases（71 DB/process、1 static artifact），零跳过；restore 与 dedicated-API 的最新通过结果覆盖早期夹具失败，重跑不重复计数。Source 与 installed package 各通过 502 项，104 个 installed 文件 hash 精确匹配；API assembly 576 项通过并明确延期 129 条规则，Node 21、SDK 35 项通过。Migration 0247 downgrade/restore 与 grants、codegen/catalog/schema、459 个环境变量和 48 个 sections 均通过。OpenAPI 只改变 DELETE description，public shapes 保持不变。受限 owner image 与禁网只读 API cold image 均通过；host sample 只用于有限并发联通，不是容器 CPU 时延、生产容量或 SLO。完整 hashes、路由覆盖、端到端样本和 12 receipts/12 Audit replay 检查见 [ADR-0127](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0127-independent-identity-deletion-commands.md)。offboarding、registration-status settings 与 dashboard hydration 仍不在此 slice。
+Migration 0247 与 `yoao_identity_deletion_client` 只开放 `deletion_policy()` 和 `execute_deletion_command(jsonb)`。API/runtime 可选 `IDENTITY_DELETION_DATABASE_URL(_FILE)`；Compose host selector 为 `IDENTITY_RUNTIME_DELETION_DATABASE_URL_FILE`。Selector 留空只关闭本 capability，private route 返回 503；显式 DSN 必须通过 readiness，失败不 fallback。Root 的最终最新用例并集通过 72 个 selected acceptance cases（71 DB/process、1 static artifact），零跳过；restore 与 dedicated-API 的最新通过结果覆盖早期夹具失败，重跑不重复计数。Source 与 installed package 各通过 502 项，104 个 installed 文件 hash 精确匹配；API assembly 576 项通过并明确延期 129 条规则，Node 21、SDK 35 项通过。Migration 0247 downgrade/restore 与 grants、codegen/catalog/schema、459 个环境变量和 48 个 sections 均通过。OpenAPI 只改变 DELETE description，public shapes 保持不变。受限 owner image 与禁网只读 API cold image 均通过；host sample 只用于有限并发联通，不是容器 CPU 时延、生产容量或 SLO。完整 hashes、路由覆盖、端到端样本和 12 receipts/12 Audit replay 检查见 [ADR-0127](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0127-independent-identity-deletion-commands.md)。offboarding、registration-status settings 与 dashboard hydration 仍不在此 slice。
 
 ## 管理员离职预览与提交
 
 此 owner slice 只抽取 `GET /api/v1/users/{user_id}/offboarding-preview` 与 `POST /api/v1/users/{user_id}/offboarding`。Public 路径、UUID 422、原 DTO／默认值、忽略 extra fields、响应、错误和调用方保持；Preview 无 body。Commit 保留 `preview_version` required unbounded string、`reason` 默认为空且最多 500 字符、`mode=handoff|emergency_suspend`（默认 handoff）、`projects=[]` 和 nullable `owner_receiver_id/annotator_receiver_id/reviewer_receiver_id`。没有 project-count cap，remote Identity JSON reader 不能加 64 KiB body limit。模型不得提前拒绝重复 project ID；仍在原 scope、CAS 与 target-state 顺序后返回 422。
 
-Preview 返回固定七个顶层字段 `user/preview_version/generated_at/projects/api_keys/blockers/can_commit`。每个 project row 使用 `project_id/project_name/roles/tasks/locked_task_count/blockers`；batch row 使用 `batch_id/batch_name`。`preview_version` 继续使用精确的 Python `json.dumps(resource_state, sort_keys=True, default=str)` UTF-8 字节的 SHA-256；保留 `ensure_ascii`、默认分隔符空格、列表顺序、aware datetime 的 Python 字符串格式与 UUID 小写格式。它是快照版本，不是身份凭据或 HMAC。资源字段清单、null project ID 的旧 `None` 摘要语义、包含／排除字段、option 顺序和 blocker 顺序见 [ADR-0128](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0128-independent-identity-offboarding-commands.md)。
+Preview 返回固定七个顶层字段 `user/preview_version/generated_at/projects/api_keys/blockers/can_commit`。每个 project row 使用 `project_id/project_name/roles/tasks/locked_task_count/blockers`；batch row 使用 `batch_id/batch_name`。`preview_version` 继续使用精确的 Python `json.dumps(resource_state, sort_keys=True, default=str)` UTF-8 字节的 SHA-256；保留 `ensure_ascii`、默认分隔符空格、列表顺序、aware datetime 的 Python 字符串格式与 UUID 小写格式。它是快照版本，不是身份凭据或 HMAC。资源字段清单、null project ID 的旧 `None` 摘要语义、包含／排除字段、option 顺序和 blocker 顺序见 [ADR-0128](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0128-independent-identity-offboarding-commands.md)。
 
 Preview 是 advisory。Target missing 为 404；当前身份必须是 active super-admin/project-admin；self 为 400。Active super-admin target 的 last-unreserved 检查先于 PA role/scope 检查。PA 只能处理 employee；active target 的空项目集允许，inactive 且无 project 的用户返回 `inactive_unmanaged`，非空集合必须全部为 actor-owned。SA 跳过项目范围限制。`can_commit` 不是 commit gate，commit 必须在持锁后重算 scope、facts 与快照。
 
@@ -456,7 +456,7 @@ Handoff 按原 project 与 role 顺序 `owner→annotator→reviewer` 执行。O
 
 两种模式均在同一 PostgreSQL transaction 中更新用户、职责、凭据、TaskLocks、Audit 和 frozen receipt。更新目标状态后再 retire generation、active API keys 和未使用的 reset links，并在最后释放 target TaskLocks；保留已接受的 self-deactivation reservation。Typed `user.offboard` Audit 只写 `mode/reason_present/transfers/unresolved/revoked_api_key_count`。Private prepare/apply 由 `OffboardingPostgresData.transaction()` 持有同一连接和事务；不在 HTTP 间暴露事务，也不引入 saga、prepare ledger 或第二个 service。重放用 accepted `scope_basis`，当前 PA 仍须拥有/可见全部受理项目；新 target 引用不重新计算旧工作。
 
-Private protocol 是 `POST /v1/identity/offboarding/execute`，wire `aap-identity-offboarding/v1`、native `aap-identity-offboarding-native/v1`、policy `aap-identity-offboarding-policy/v1` / `aap-identity-offboarding/v1`。API HTTP composition 为 `apps/api/app/api/v1/offboarding_commands.py` 的 `require_offboarding_manager`、`get_offboarding_commands` 与 `execute_offboarding`；`IdentityOffboardingCommands` 装配 `OffboardingCommandsPort`，`IdentityOffboardingCommandData` 在同一 caller transaction 内执行 prepare/apply。API/runtime 可选 `IDENTITY_OFFBOARDING_DATABASE_URL(_FILE)`，Compose host selector 为 `IDENTITY_RUNTIME_OFFBOARDING_DATABASE_URL_FILE`。Migration 0248 的 `yoao_identity_offboarding_client` 仅有三个 typed functions。空 selector 关闭 standalone Identity runtime capability；嵌入式 API 在无专用 DSN 时继续使用 caller transaction。显式 DSN 必须 readiness pass，失败不 fallback。Root 的限定本地验收通过 77 个 distinct selected cases（76 DB/process、1 static artifact），零跳过；exact checks、hashes、image bounds 与样本见 [ADR-0128](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0128-independent-identity-offboarding-commands.md)。这不代表完整 Identity、生产容量或切换完成；Offboarding 也不是完整 GDPR 擦除。
+Private protocol 是 `POST /v1/identity/offboarding/execute`，wire `aap-identity-offboarding/v1`、native `aap-identity-offboarding-native/v1`、policy `aap-identity-offboarding-policy/v1` / `aap-identity-offboarding/v1`。API HTTP composition 为 `apps/api/app/api/v1/offboarding_commands.py` 的 `require_offboarding_manager`、`get_offboarding_commands` 与 `execute_offboarding`；`IdentityOffboardingCommands` 装配 `OffboardingCommandsPort`，`IdentityOffboardingCommandData` 在同一 caller transaction 内执行 prepare/apply。API/runtime 可选 `IDENTITY_OFFBOARDING_DATABASE_URL(_FILE)`，Compose host selector 为 `IDENTITY_RUNTIME_OFFBOARDING_DATABASE_URL_FILE`。Migration 0248 的 `yoao_identity_offboarding_client` 仅有三个 typed functions。空 selector 关闭 standalone Identity runtime capability；嵌入式 API 在无专用 DSN 时继续使用 caller transaction。显式 DSN 必须 readiness pass，失败不 fallback。Root 的限定本地验收通过 77 个 distinct selected cases（76 DB/process、1 static artifact），零跳过；exact checks、hashes、image bounds 与样本见 [ADR-0128](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0128-independent-identity-offboarding-commands.md)。这不代表完整 Identity、生产容量或切换完成；Offboarding 也不是完整 GDPR 擦除。
 
 ## 自助注销与最后一名超级管理员围栏
 
@@ -551,7 +551,7 @@ commit／rollback，函数不改事务范围；等待后以 `clock_timestamp()` 
 错误语义。Mask Repair 等原来仅检查账号存在的入口不增加 active 拒绝；作业取消的停用
 账号保持 401 与 Bearer 错误。集合查询和展示投影通过下文公开关系读取，当前定向结果
 不代表完整 Identity 独立部署完成；实际剩余项见[模块台账](/dev/concepts/module-deployment#剩余工作台账)。详见
-[ADR-0161](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0161-identity-current-authority-consumers.md)。
+[ADR-0161](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0161-identity-current-authority-consumers.md)。
 
 ## 集合与展示的同事务读取关系
 
@@ -591,7 +591,7 @@ psql "$MIGRATION_DATABASE_URL" \
 `check_accepted_api_key`。它不创建新角色或部署模式；内嵌 Identity 和隔离 seed 的
 旧配置继续可用。旧宽授权及其默认权限不因此改写；每次刷新宽授权后必须最后重应用
 consumer 清单，新 Identity 关系也需复核。当前脚本和定向证据不代表主 API 已切换
-到这份凭据。设计与验证见 [ADR-0162](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0162-identity-read-relations-and-consumer-grants.md)。
+到这份凭据。设计与验证见 [ADR-0162](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0162-identity-read-relations-and-consumer-grants.md)。
 
 ## 内嵌运行角色的私表权限
 
@@ -640,4 +640,4 @@ Settings owner 的 `identity_recovery_policy`，数据库覆盖优先，缺失�
 公开 `/auth/registration-status` 的返回形状保持，只读取 owner 当前有效状态，绕过
 API 的旧进程缓存。已有远程、专用 Recovery DSN 与内嵌选择路径保留；缺少 owner、
 损坏响应或连接错误返回 503，不回退 API 默认值或原表读取。没有新增 DSN、环境变量、
-LOGIN 或部署模式。源码／定向进程证据见 [ADR-0163](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0163-identity-registration-policy-owner.md)。
+LOGIN 或部署模式。源码／定向进程证据见 [ADR-0163](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0163-identity-registration-policy-owner.md)。

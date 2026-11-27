@@ -1,4 +1,4 @@
-<!-- AUTO-GENERATED — 由 docs-site/scripts/generate-hotkeys.mjs 从 -->
+<!-- AUTO-GENERATED — 由 scripts/generate-hotkeys.mjs 从 -->
 <!-- apps/web/src/pages/Workbench/state/hotkeys.ts 生成。请勿手改。 -->
 
 同一按键按当前工作台与选择上下文路由。输入框、菜单、停靠标签、类别弹层及活跃工具自有按键优先；A / D 仅处理普通待决候选，成功后才自动前进，视频限定当前帧。交互式 SAM 使用 Enter / Esc / Tab，追踪作业使用其审阅操作。

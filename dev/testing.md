@@ -22,7 +22,7 @@ last_reviewed: 2026-11-23
 | API 事务、锁、权限、任务或真实存储 | `dev:worktree exec --mode test` 中定向运行 API pytest；独立 LOGIN、镜像或恢复另选模块验证器。                                                                    |
 | Web 组件与客户端请求               | `pnpm --filter web test <文件或目录>`。MSW 核对业务请求，不代替后端权限或持久化验证。                                                                            |
 | 浏览器业务、真实媒体或渲染         | `dev:worktree exec --mode e2e` 中运行目标 Playwright spec；Mask、点云、精确视频和源码 Worker 按专项入口执行。                                                    |
-| ML 协议、SDK 工件或训练与存储      | 选 [ML CPU runner](/dev/reference/ml-backend-protocol#协议验证)或[模块与领域专项](./how-to/run-specialized-tests)，不从平台单测推断独立包、真实 GPU 或发布资格。 |
+| ML 协议、SDK 工件或训练与存储      | 选 [ML CPU runner](/plugins/protocols/inference-v2#协议验证)或[模块与领域专项](./how-to/run-specialized-tests)，不从平台单测推断独立包、真实 GPU 或发布资格。 |
 
 [测试归属清单](https://github.com/YOAO-Labs/ai-annotation-platform/blob/dev/scripts/test-suites.json)是 Python 测试根与 CI owner／ML CPU 套件的来源。用 `node scripts/test-suite-inventory.mjs` 查未登记测试根，`bash scripts/run-ml-cpu-tests.sh list` 列 ML CPU 套件。各包分别收集，不在仓库根混跑所有 Python 测试。`--collect-only`、`vitest list`、`playwright test --list` 只证明当前选择，不证明执行通过。
 

@@ -133,13 +133,13 @@ archived
 }
 ```
 
-工具单位枚举与 `app/schemas/_jsonb_types.ToolUnitId` Literal 对齐：`bbox` / `polyline` / `region` / `lidar_box_3d` / `rotated_bbox` / `keypoint` / `point_mask_3d`。交互式 AI 不是几何工具单位：smart-point / smart-box / exemplar 的多边形归 `region`，Magic Box 的矩形框归 `bbox`；项目级 `ai_interactive_enabled` 只控制能力是否开放。**强隔离决策**：不同工具的同名类是两条独立记录，详见 [ADR-0026](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/archive/0026-tool-unit-class-and-attribute-binding.md)。
+工具单位枚举与 `app/schemas/_jsonb_types.ToolUnitId` Literal 对齐：`bbox` / `polyline` / `region` / `lidar_box_3d` / `rotated_bbox` / `keypoint` / `point_mask_3d`。交互式 AI 不是几何工具单位：smart-point / smart-box / exemplar 的多边形归 `region`，Magic Box 的矩形框归 `bbox`；项目级 `ai_interactive_enabled` 只控制能力是否开放。**强隔离决策**：不同工具的同名类是两条独立记录，详见 [ADR-0026](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/archive/0026-tool-unit-class-and-attribute-binding.md)。
 
 如果你改的是「标注长什么样」，十有八九要从 `project.tool_bindings` 入手，而不是 `task`。
 
 `projects.py` 保留 HTTP 请求、提交与响应。六项项目／模板配置命令通过 `services/workspace_configuration.py` 调用现有 Workspace owner，借用调用方 Session，不自行提交或回滚。`apps/workspace/src/yoao_workspace` 持有配置编排、值、旧扁平类别／属性规范化、kind、克隆与模板策略；Native 执行当前权限围栏、跨 owner 类型化调用及固定列写入。
 
-模板列表／详情及配置提交后的投影通过 `services/workspace_template_query.py` 调用读取 owner。API 附带成功命令回执读取当前行，再校验公开响应。原配置写入及模板读取的 ORM 副本已删除。命名流水线复用 Identity 的窄组织事实，项目内嵌与命名流水线共用保存结构校验，`ProjectOut` 继续消费共享 Workspace 纯投影。项目普通读取、成员、mention 与 access 各由原查询 owner 提供。当前装配见 [Workspace 运行指南](/api/guides/workspace-runtime)，既往配置切片验收见 [ADR-0136](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0136-workspace-configuration-command-owner.md)。
+模板列表／详情及配置提交后的投影通过 `services/workspace_template_query.py` 调用读取 owner。API 附带成功命令回执读取当前行，再校验公开响应。原配置写入及模板读取的 ORM 副本已删除。命名流水线复用 Identity 的窄组织事实，项目内嵌与命名流水线共用保存结构校验，`ProjectOut` 继续消费共享 Workspace 纯投影。项目普通读取、成员、mention 与 access 各由原查询 owner 提供。当前装配见 [Workspace 运行指南](/api/guides/workspace-runtime)，既往配置切片验收见 [ADR-0136](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0136-workspace-configuration-command-owner.md)。
 
 前端项目设置的归属：`基本信息` 只维护名称、状态、截止日期和类型展示；`类别与属性` 是 `tool_bindings` 的唯一编辑入口，同一个工具单位 tab 下同时维护类别、关键点骨骼模板与属性 schema。
 
@@ -337,4 +337,4 @@ Workspace 只获显式函数权限，不直接读取这些所有者的原表。
 API 现在只使用借用事务的绑定，后端显示资料仍经 Identity Briefs 边界。
 退役前的 50 项冻结 HTTP 观测及独立包、受限镜像、故障／重启、备份恢复和完整迁移证据保持原范围。
 负责人转移保留提交前解码和提交后重新读行两个阶段，公开 DTO 仍在 API 验证。
-详见 [Project 查询 owner ADR](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0139-workspace-project-query-owner.md)。
+详见 [Project 查询 owner ADR](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0139-workspace-project-query-owner.md)。

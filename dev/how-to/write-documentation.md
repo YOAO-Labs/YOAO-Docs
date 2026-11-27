@@ -1,15 +1,15 @@
 ---
 title: 编写与维护文档
-description: docs-site 文档页面的结构选型、锚点稳定性、媒体放置规范与唯一事实源原则
+description: YOAO-Docs 文档页面的结构选型、锚点稳定性、媒体放置规范与唯一事实源原则
 audience: [dev]
 type: how-to
 status: stable
-last_reviewed: 2026-10-19
+last_reviewed: 2026-11-27
 ---
 
 # 编写与维护文档
 
-在 `docs-site` 中新增或重构文档页面时，请遵循本指南。我们的目标是让每篇文档快速回答一类明确的问题、保持公开链接与锚点稳定，并引导读者直接查阅拥有该事实的权威来源。
+在 `YOAO-Docs` 仓库中新增或重构文档页面时，请遵循本指南。我们的目标是让每篇文档快速回答一类明确的问题、保持公开链接与锚点稳定，并引导读者直接查阅拥有该事实的权威来源。
 
 <span id="choose-the-page-shape" aria-hidden="true"></span>
 
@@ -17,17 +17,17 @@ last_reviewed: 2026-10-19
 
 动笔前先明确读者的任务目标，每篇页面应专注于以下五种体裁之一：
 
-| 体裁                  | 页面开篇重点                               | 典型目录                        |
-| --------------------- | ------------------------------------------ | ------------------------------- |
-| 教程（Tutorial）      | 达成结果、前置条件与循序渐进的引导路径     | `dev/tutorials/`、`user-guide/` |
-| 操作指南（How-to）    | 具体任务目标与最短、最安全的操作步骤       | `dev/how-to/`、`ops/runbooks/`  |
-| 参考手册（Reference） | 速查表、精确字段定义与兼容性规则           | `dev/reference/`、`api/guides/` |
-| 架构阐释（Concepts）  | 读者理解系统所需的边界关系、模块职责与决策 | `dev/concepts/`                 |
-| 运维手册（Runbook）   | 故障症状、排查定位、恢复操作与闭环验证     | `ops/runbooks/`                 |
+| 体裁                  | 页面开篇重点                               | 典型目录                                      |
+| --------------------- | ------------------------------------------ | --------------------------------------------- |
+| 教程（Tutorial）      | 达成结果、前置条件与循序渐进的引导路径     | `dev/tutorials/`、`plugins/sdk/`、`user-guide/` |
+| 操作指南（How-to）    | 具体任务目标与最短、最安全的操作步骤       | `dev/how-to/`、`plugins/manage/`、`ops/runbooks/` |
+| 参考手册（Reference） | 速查表、精确字段定义与兼容性规则           | `dev/reference/`、`plugins/protocols/`、`api/guides/`、`sdk/` |
+| 架构阐释（Concepts）  | 读者理解系统所需的边界关系、模块职责与决策 | `dev/concepts/`                               |
+| 运维手册（Runbook）   | 故障症状、排查定位、恢复操作与闭环验证     | `ops/runbooks/`                               |
 
 不要为了让内容更容易被搜到而把整篇文档复制到另一个栏目。请将权威解释放在归属该主题的页面中，再从栏目导览页（Hub）或相关文章通过链接指向它。
 
-仓库根的 `DEV.md` 只保留本地开发命令和专题入口。`pnpm --filter docs-site check:readability` 在 CI 检查其上限为 120 行。把具体操作、故障排查和架构说明写在对应专题，历史验收结果留在 ADR、计划证据或 Git 历史。
+主仓 `YOAO` 根目录的 `DEV.md` 只保留本地开发命令和专题入口，具体操作、故障排查和架构说明写在 `YOAO-Docs` 对应专题，历史验收结果留在计划证据或 Git 历史。
 
 <span id="open-with-the-readers-next-action" aria-hidden="true"></span>
 
@@ -130,11 +130,11 @@ Markdown 标题会自动生成公开的 URL 片段（`#anchor`），请将已有
 ::: code-group
 
 ```bash [pnpm]
-pnpm docs:build
+pnpm build
 ```
 
 ```bash [npm]
-npm run docs:build
+npm run build
 ```
 
 :::
@@ -148,11 +148,11 @@ npm run docs:build
 
 修改文档中的具体数值或契约前，请先确认拥有该事实的权威来源：
 
-- **API 路由与 Schema**：源自后端应用代码与受跟踪的 OpenAPI 快照（`openapi.snapshot.json`）。接口契约变更后请重新生成 API 产物。
-- **自动生成页面与索引**：由各自的生成脚本刷新；只要上游数据源存在，切勿手改 `*.generated.md`。
-- **工作台设置**：在 `workbenchSettingsFields.ts` 维护字段和分组，在 `workbenchLocalDefaults.ts` 维护本机开关及单选项的默认值；运行时与文档使用同一默认值。新增本机字段时须补齐默认值，删除字段时也须移除对应默认值，再运行 `pnpm --filter docs-site settings`。
-- **环境变量文档**：以 `.env.example` 与环境变量生成脚本（`pnpm docs:gen-env-vars`）为准。
-- **架构决策记录（ADR）**：真源位于 `docs/adr/`，文档站中的 `/dev/adr/` 是构建期同步镜像。
+- **API 路由与 Schema**：源自主仓 `YOAO` 后端代码与受跟踪的 OpenAPI 快照（`openapi.snapshot.json`）。接口契约变更后请同步 `YOAO-Docs` 生成产物。
+- **自动生成页面与索引**：由各自的生成脚本刷新；只要上游数据源存在，切勿手改 `*.generated.md` 或自动生成标记区块。
+- **工作台设置**：在 `YOAO` 主仓维护 `workbenchSettingsFields.ts`、`workbenchLocalDefaults.ts` 与 `apps/web/src/api/auth.ts`，再在 `YOAO-Docs` 运行 `pnpm gen:settings`。
+- **环境变量文档**：以 `YOAO/.env.example` 与环境变量生成脚本（`pnpm gen:env-vars`）为准。
+- **插件清单与 SDK 参考**：官方插件目录与插件作者 SDK 参考由 `YOAO-Plugins` 与 `Plugin-SDK` 生成，运行 `pnpm gen:plugins` 更新；架构决策记录（ADR）真值位于 `YOAO/docs/adr/`。
 - **截图、视频与架构图**：按需维护真实文件和公开引用；架构图另保留可编辑源。素材更新前先按[按需截图与录屏](./update-screenshots)核对真实界面，回放复核改动的素材。
 
 对于容易随代码演进而漂移的配置值或字段列表，优先链接到权威页面或源码文件，避免在多处重复抄写。当事实修正跨越 API、运行时或部署边界时，请结合代码实现一并更新受影响的文档。
@@ -161,23 +161,25 @@ npm run docs:build
 
 ## 运行定向校验
 
-完成常规 Markdown 文档修改后，请运行覆盖改动范围的校验命令：
+完成常规 Markdown 文档修改后，在 `YOAO-Docs` 根目录运行校验命令：
 
 ```bash
-pnpm exec prettier --check docs-site/dev/how-to/write-documentation.md
-pnpm --filter docs-site check:frontmatter
-pnpm --filter docs-site check:codegen
-pnpm docs:build
+pnpm exec prettier --check dev/how-to/write-documentation.md
+pnpm check:frontmatter
+pnpm check:all
+DOCS_BASE=/YOAO-Docs/ pnpm build
 git diff --check
 ```
 
-若移动或修改了媒体引用，按[按需截图与录屏](./update-screenshots)检查缺失的媒体及孤儿图片，并在预览中核对受影响的图片、视频和封面。若修改了侧边栏导航或公开路由，请运行导航覆盖率检查（`check:nav`）并在本地预览中抽查深层链接。
+若需要校验多仓生成产物一致性，请设置本地或镜像仓库路径环境变量后执行 `pnpm check:codegen`、`pnpm check:plugins-codegen` 与 `python3 scripts/generate-training-reference.py --check`。
+
+若移动或修改了媒体引用，按[按需截图与录屏](./update-screenshots)检查缺失的媒体及孤儿图片，并在预览中核对受影响的图片、视频和封面。若修改了侧边栏导航或公开路由，请运行导航覆盖率检查（`pnpm check:nav`）并在本地预览中抽查深层链接。
 
 若进行了阅读版式调整或多页面结构重组，请在修改前先抓取基线锚点，并在修改完成后针对预览服务做回归校验：
 
 ```bash
-node docs-site/scripts/check-reading-layout.mjs capture http://127.0.0.1:5173/ /tmp/docs-reading-anchors.json
-node docs-site/scripts/check-reading-layout.mjs verify http://127.0.0.1:5173/ /tmp/docs-reading-anchors.json
+node scripts/check-reading-layout.mjs capture http://127.0.0.1:5173/ /tmp/docs-reading-anchors.json
+node scripts/check-reading-layout.mjs verify http://127.0.0.1:5173/ /tmp/docs-reading-anchors.json
 ```
 
-请使用 `pnpm docs:dev` 实际打印的预览 URL（包含部署路径前缀）。`capture` 不会覆盖已存在的基线文件；`verify` 会自动检查代表性路由、历史锚点 ID、正文宽度、侧边栏激活态以及亮/暗两种主题模式。
+请使用 `pnpm dev` 实际打印的预览 URL（包含部署路径前缀）。`capture` 不会覆盖已存在的基线文件；`verify` 会自动检查代表性路由、历史锚点 ID、正文宽度、侧边栏激活态以及亮/暗两种主题模式。

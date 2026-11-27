@@ -232,7 +232,7 @@ yoao members remove <project-id> <member-id> [--yes] [--json]
 
 列出、添加、移除项目成员并变更项目角色。`--role` 是**项目角色**(`annotator` / `reviewer` / `viewer`);`list` 会分列展示项目角色与平台角色。添加时的账号状态、平台 / 项目角色兼容性与管理权限由服务端校验。
 
-`preview-role` 是只读预检,返回当前 / 目标角色、版本、阻塞项、受影响资源快照与一次性 `preview_token`;`change-role` 需要带上预检的 `--expected-version` 与 `--preview-token` 以及 `--reason`,属变更操作,JSON 模式必须显式 `--yes`。版本 / 快照失效或资源占用时服务端返回 409,需重新预检。变更规则见[可见性与权限](../concepts/visibility-and-permissions#成员角色变更与交接)。
+`preview-role` 是只读预检,返回当前 / 目标角色、版本、阻塞项、受影响资源快照与一次性 `preview_token`;`change-role` 需要带上预检的 `--expected-version` 与 `--preview-token` 以及 `--reason`,属变更操作,JSON 模式必须显式 `--yes`。版本 / 快照失效或资源占用时服务端返回 409,需重新预检。变更规则见[可见性与权限](/dev/concepts/visibility-and-permissions#成员角色变更与交接)。
 
 ```bash
 yoao members list P-1
@@ -516,6 +516,44 @@ pid=$(yoao projects create --name ci-demo --type image --json | jq -r '.id')
 # 导入预测,失败时退出码非 0 使 CI 步骤失败
 yoao predictions import "$pid" preds.json --format native_json --json
 ```
+
+### yoao plugins {#yoao-plugins}
+
+插件运维子命令需要 `[plugins]` 可选依赖（`python -m pip install 'yoao-sdk[plugins]'`）。
+
+#### 推理插件管理（`yoao plugins`）
+
+| 命令 | 核心参数 | 说明 |
+| --- | --- | --- |
+| `inspect-image` | `--image <ref@sha256:...>` | 检查不可变 OCI 镜像的 manifest 与标签 |
+| `prepare` | `--config <json>` 或 `--image`/`--name`/`--url`/`--network`、`--state-dir` | 预留安装身份、Registry 与资源绑定，生成私有状态目录 |
+| `qualify` | `--state-dir`、`--fixture`、`--asset-dir`、`--model-approval-ref`、`--fixture-approval-ref` | 生成并核验 GPU 生命周期资格报告 |
+| `prepare-assets` | `--state-dir` | 调用镜像内置的显式预训练资产准备流程 |
+| `install` | `--state-dir`、`--qualification <json>` 或 `--qualify`、`--yes` | 启动并绑定受管容器，验证后激活安装 |
+| `migrate-state` | `--state-dir`、`--manifest`、`--image-id`、`--yes` | 迁移旧版本地安装收据并重验容器身份 |
+| `asset-approvals` | `--state-dir` | 读取当前安装的资产决策状态与修订号 |
+| `approve-assets` | `--state-dir`、`--descriptor`、`--choices`、`--expected-revision`、`--yes` | 在容器内逐文件测量 SHA-256 并提交预训练规格批准 |
+| `status` | `--state-dir` | 查询平台安装记录与本地状态收据 |
+| `disable` | `--state-dir`、`--yes` | 关闭准入、证明排空并停止受管容器 |
+| `restart` | `--state-dir`、`--yes` | 排空并以既有资格重建受管容器 |
+| `upgrade` | `--from-state`、`--state-dir`、`--qualification`/`--qualify`、`--yes` | 按新制品状态目录创建新安装身份完成平滑升级 |
+| `register-direct` | `--name`、`--url`、`--token-file` / `--auth-token`、`--source-tier` | 注册外部直连 HTTP 推理插件实例 |
+| `probe` | `--installation-id <uuid>` | 对已安装插件执行只读实时探测 |
+| `uninstall` | `--state-dir`、`--yes` | 完成依赖与静默排空检查后退役安装（保留历史） |
+
+#### 训练器插件管理（`yoao plugins trainer`）
+
+| 命令 | 核心参数 | 说明 |
+| --- | --- | --- |
+| `list` | `[--include-retired]` `[--status <status>]` | 列出已注册 `yoao-trainer/v1` 插件 |
+| `get` | `<plugin_id>` | 查看单个训练器插件的清单与资格状态 |
+| `register` | `--manifest`、`--capabilities`、`--execution-mode`、`--source-tier` | 注册 `yoao-extension-manifest/v1` 与 `TrainerCapabilitiesV1` |
+| `qualify` | `<plugin_id> --expected-revision <n> --report <json>` | 导入并绑定资格验收报告 |
+| `enable` | `<plugin_id> --expected-revision <n> --yes` | 启用已核验插件 |
+| `disable` | `<plugin_id> --expected-revision <n> --yes` | 停用插件，阻断新训练任务准入 |
+| `retire` | `<plugin_id> --expected-revision <n> --yes` | 永久退役处于停用状态的插件 |
+
+详细安装检查单、权限边界与迁移步骤见 [安装与运行管理](/plugins/manage/)。
 
 ## 错误输出约定
 

@@ -3,13 +3,13 @@ title: 环境变量参考
 audience: [dev, ops]
 type: reference
 status: stable
-last_reviewed: 2026-11-25
+last_reviewed: 2026-11-27
 ---
 
 # 环境变量参考
 
-> **自动生成说明**：本页由 `docs-site/scripts/generate-env-vars.mjs` 从 `.env.example` 生成。
-> 修改环境变量说明请编辑 `.env.example` 中的注释，再运行 `pnpm docs:gen-env-vars`。
+> **自动生成说明**：本页由 `scripts/generate-env-vars.mjs` 从 `.env.example` 生成。
+> 修改环境变量说明请编辑 `YOAO/.env.example` 中的注释，再运行 `pnpm gen:env-vars`。
 
 ## 数据库 (PostgreSQL)
 
@@ -89,13 +89,20 @@ last_reviewed: 2026-11-25
 | `TRAINING_EXECUTOR_TOKEN` | `—` | — |
 | `TRAINING_NODE_ID` | `local` | — |
 | `TRAINING_GPU_UUID` | `—` | — |
-| `TRAINING_CATALOG_JSON` | `{}` | JSON: {"ultralytics":{"version":"PINNED_VERSION","image_digest":"sha256:IMAGE_DIGEST", "base_models":{"yolo11n":{"filename":"yolo11n.pt","sha256":"WEIGHTS_SHA256"}}}} Current adapters: ultralytics 8.4.183 / libreyolo 1.6.0; entries share the same shape. Explicitly list verified YOLOv8/11/26 n/s/m/l/x detect/segment or LibreYOLO9 t/s/m/c detect assets. A bucket-backed entry also pins size_bytes and object_key=model-assets/sha256/SHA256/weights.pt. Prepare that digest on each target node before accepting experiments; bucket existence alone is insufficient. Historical 8.4.177 experiments require their original qualified runtime, not an implicit version rewrite. Revision-2 detection image upgrades require a qualified source-image -&gt; complete schema-identity allowlist in compatible_config_images. LibreYOLO9 t/s/m/c native detection weights can return through the qualified CPU inference adapter. |
-| `TRAINING_HEARTBEAT_TIMEOUT_SECONDS` | `60` | — |
+| `TRAINING_GPU_UUIDS` | `—` | — |
+| `TRAINING_CPU_SLOTS` | `0` | — |
+| `TRAINING_HEARTBEAT_TIMEOUT_SECONDS` | `60` | Trainer plugins are registered, qualified, and enabled through the platform admin API (yoao_learning_v1.trainer_plugins) rather than a static catalog JSON env var. |
 | `TRAINING_IMAGE` | `—` | 仅供 docker-compose.training.yml：先准备已发布镜像，Compose 不构建镜像。 TRAINING_IMAGE 为仓库名（可带标签），不得包含 @digest；凭据文件不进入镜像。 TRAINING_IMAGE_DIGEST 必须为 registry manifest digest（RepoDigests），不能用镜像 .Id。 Compose 用同一 repository@sha256 引用选择镜像并生成 TRAINING_IMAGE_REFERENCE。 |
 | `TRAINING_IMAGE_DIGEST` | `—` | — |
 | `TRAINING_API_URL` | `http://host.docker.internal:8000/api/v1/internal/training` | — |
 | `TRAINING_EXECUTOR_TOKEN_PATH` | `—` | — |
 | `TRAINING_MODELS_PATH` | `./training/models` | Executor /models and YOLO Backend /model-assets share this read-only host directory only on the same host. On different hosts, prepare separate local directories from the same authoritative bucket. |
+| `TRAINING_SUPERVISOR_MODE` | `—` | — |
+| `TRAINING_DEVICE_KIND` | `gpu` | — |
+| `TRAINING_CPU_SLOT` | `0` | — |
+| `TRAINING_CONTAINER_RUNTIME` | `docker` | — |
+| `TRAINING_LOCAL_PLUGINS_JSON` | `—` | — |
+| `TRAINING_LOCAL_PLUGINS_FILE` | `—` | — |
 
 ## 超大图 Image Pyramid
 
@@ -412,7 +419,7 @@ last_reviewed: 2026-11-25
 
 | 变量 | 默认值 | 说明 |
 |---|---|---|
-| `SAM_VARIANT` | `tiny` | Enable docker-compose.ml-gsam2.yml with --profile gpu after preparing approved assets. 模型变体 (按精度/显存递增): tiny | small | base_plus | large; 默认 tiny (4060 友好). |
+| `SAM_VARIANT` | `tiny` | Enable YOAO-Plugins plugins/inference/grounded-sam2/docker-compose.yml with --profile gpu after preparing approved assets. 模型变体 (按精度/显存递增): tiny | small | base_plus | large; 默认 tiny (4060 友好). |
 | `DINO_VARIANT` | `T` | GroundingDINO 变体: T (Swin-T, 默认) | B (Swin-B, 更准但显存翻倍). |
 | `BOX_THRESHOLD` | `0.35` | DINO 检测阈值; 业务图召回不足可下调到 0.25, 误检多则上调到 0.45. |
 | `TEXT_THRESHOLD` | `0.25` | DINO 文本-标签匹配阈值; 短语 prompt 通常 0.25 即可. |
@@ -594,6 +601,20 @@ last_reviewed: 2026-11-25
 | `NOTIFICATION_PUBLICATION_TOKEN` | `—` | — |
 | `NOTIFICATION_PUBLICATION_TOKEN_FILE` | `—` | — |
 | `NOTIFICATION_PUBLISH_API_TOKEN_FILE` | `—` | overlay 宿主 secret：同一个即时发布 bearer，挂载到 publisher 和所需调用进程。 |
+| `NOTIFICATION_CHANNEL_ENCRYPTION_KEY` | `—` | 外部通知通道插件：Bearer 令牌 Fernet 加密密钥（与 SECRET_KEY 独立；未配置时写路径失败关闭）。 |
+| `NOTIFICATION_CHANNEL_ENCRYPTION_KEY_FILE` | `—` | — |
+| `NOTIFICATION_CHANNEL_HOST_ALLOWLIST` | `—` | 外部通知通道 SSRF 允许列表：私网主机的域名/IP/CIDR（留空仅允许公网 HTTPS）。 |
+| `NOTIFICATION_CHANNEL_ALLOW_INSECURE_HTTP_HOSTS` | `—` | 外部通知通道允许明文 http:// 的私网主机列表（仅限私网/容器网，留空强制 HTTPS）。 |
+| `NOTIFICATION_CHANNEL_DELIVERY_DATABASE_URL` | `—` | 可选：专用外部通知投递受限数据库账号（yoao_notification_channel_delivery_client）DSN。 |
+| `NOTIFICATION_CHANNEL_DELIVERY_DATABASE_URL_FILE` | `—` | — |
+| `NOTIFICATION_CHANNEL_VERIFY_RATE_LIMIT_PER_MINUTE` | `5` | 每用户每通道 verify-address 限流上限（次/分钟，1..60）与 Beat 扫描间隔（秒，2..300）。 |
+| `NOTIFICATION_CHANNEL_SWEEP_INTERVAL_SECONDS` | `10` | — |
+| `FORMAT_ADAPTER_ENCRYPTION_KEY` | `—` | 外部格式适配器插件：Bearer 令牌 Fernet 加密密钥（与 SECRET_KEY 独立；未配置时写路径失败关闭）。 |
+| `FORMAT_ADAPTER_ENCRYPTION_KEY_FILE` | `—` | — |
+| `FORMAT_ADAPTER_HOST_ALLOWLIST` | `—` | 外部格式适配器 SSRF 允许列表：私网主机的域名/IP/CIDR（留空仅允许公网 HTTPS）。 |
+| `FORMAT_ADAPTER_ALLOW_INSECURE_HTTP_HOSTS` | `—` | 外部格式适配器允许明文 http:// 的私网主机列表（仅限私网/容器网，留空强制 HTTPS）。 |
+| `INFERENCE_PLUGIN_PRIVATE_HOST_ALLOWLIST` | `—` | 直连推理插件 SSRF 私网允许列表：私网主机的域名/IP/CIDR（留空拒绝私网地址）。 |
+| `INFERENCE_PLUGIN_LOOPBACK_HOST_ALLOWLIST` | `—` | 直连推理插件本地回环允许列表（仅裸机 venv/conda 本地直连或本地验收时显式配置，如 127.0.0.1,::1,localhost）。 |
 
 ## 独立 Assets 来源服务（可选，不进入默认 Compose）
 
@@ -948,9 +969,9 @@ last_reviewed: 2026-11-25
 
 | 变量 | 默认值 | 说明 |
 |---|---|---|
-| `ROUTE_CONTROL_TOKEN` | `—` | 值／文件恰好选择一项。旧名 AAP_ROUTE_CONTROL_TOKEN(_FILE) 任一非空时后端拒绝启动， 错误只报告旧键名，不输出值；迁移时删除旧键而不是保留双写。 |
+| `ROUTE_CONTROL_TOKEN` | `—` | 值／文件恰好选择一项。旧名 AAP_ROUTE_CONTROL_TOKEN(_FILE) 与 AAP_ROUTE_REGISTRY_ID 任一非空时后端拒绝启动， 错误只报告旧键名，不输出值；迁移时删除旧键而不是保留双写。 |
 | `ROUTE_CONTROL_TOKEN_FILE` | `—` | — |
-| `AAP_ROUTE_REGISTRY_ID` | `—` | 路由注册表实例身份；与已安装插件制品共用，保留旧名，按独立门迁移。 |
+| `ROUTE_REGISTRY_ID` | `—` | 路由注册表实例身份；与已安装插件制品共用。旧名 AAP_ROUTE_REGISTRY_ID 非空时拒绝启动。 |
 
 ## Audit 默认由 maintenance worker + Beat 调度；以下为显式运维 CLI 和管理员只读选项
 

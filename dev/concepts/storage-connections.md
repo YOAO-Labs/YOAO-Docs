@@ -162,7 +162,7 @@ flowchart TD
 
 取消原子设置终态，保留已提交的部分。外部调用可能稍后才返回，但旧租约或终态结果不能登记新素材，因此取消后释放来源删除围栏不会产生迟到写入。S3 使用 ETag 条件读取；SFTP 使用已知主机指纹和目录/源身份检查。原始及不确定拷贝不自动删除。
 
-媒体和实时通知继续使用既有执行方。持久派发记录可恢复提交到队列前后的中断；broker 消息可能重复，派发确认不代表媒体计算完成。同步 ZIP、旧前缀扫描和连接管理都复用 `apps/assets-source` 的独立工作流；媒体派生执行和其余 Assets 能力仍需迁移与验证，见 [ADR-0100](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0100-durable-connector-import.md)、[ADR-0101](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0101-assets-synchronous-zip-and-scan.md) 与[来源控制](/api/guides/assets-source)。
+媒体和实时通知继续使用既有执行方。持久派发记录可恢复提交到队列前后的中断；broker 消息可能重复，派发确认不代表媒体计算完成。同步 ZIP、旧前缀扫描和连接管理都复用 `apps/assets-source` 的独立工作流；媒体派生执行和其余 Assets 能力仍需迁移与验证，见 [ADR-0100](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0100-durable-connector-import.md)、[ADR-0101](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0101-assets-synchronous-zip-and-scan.md) 与[来源控制](/api/guides/assets-source)。
 
 请求参数：
 
@@ -186,7 +186,7 @@ API/worker 各自加载根映射；Celery `worker_direct` 加实际 hostname 校
 
 位置登记/修改仅超管；项目管理员按 `global` 或 `use_user_ids` 使用和探测，员工不得枚举目录。每页重新检查当前授权，游标绑定位置、修订、节点、路径摘要和目录快照。现有连接通过 `connection_id` 关联位置；凭据仍由 `StorageConnection`/Fernet 持有，未复制。连接编辑使用独立 `revision`（迁移 0210，旧行初始为 1），按 `connection → location` 顺序加锁。候选认证与有界列举在行锁外进行，不修改 ORM 原配置；验证匹配的 SFTP 位置时复用 `SftpAccess` 的固定公钥与地址约束，普通复制连接继续使用系统 `known_hosts`。验证成功后加锁、重读当前修订、活跃账号/管理权限、原 API Key、最新白名单和引用，再原子发布。有效名称编辑仅推进连接 `revision`，实际配置变化或显式凭据轮换才推进位置 `config_revision`；旧探测因此失效。有内容/用途引用时拒绝实际配置改向或删除。删除无引用连接级联清理关联与探测，既有项目级外键行为保持一致。
 
-九用途绑定查询只读，缺失不自动 bootstrap，共桶不合并用途。头像、报告附件、审计归档、导出、导入暂存、数据集原件、媒体缓存、标注文件和训练文件提供经预览确认的用途切换入口；`DatasetSource` 提供只读观测扫描及显式登记。完整接口见[受控存储位置](/api/guides/storage-locations)，决策见[ADR 0092](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/archive/0092-controlled-storage-registry.md)。
+九用途绑定查询只读，缺失不自动 bootstrap，共桶不合并用途。头像、报告附件、审计归档、导出、导入暂存、数据集原件、媒体缓存、标注文件和训练文件提供经预览确认的用途切换入口；`DatasetSource` 提供只读观测扫描及显式登记。完整接口见[受控存储位置](/api/guides/storage-locations)，决策见[ADR 0092](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/archive/0092-controlled-storage-registry.md)。
 
 ## 九用途绑定与保存目标隔离
 

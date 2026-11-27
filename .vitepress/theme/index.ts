@@ -5,6 +5,7 @@ import DocsHome from "./components/DocsHome.vue";
 import DocLinkCard from "./components/DocLinkCard.vue";
 import ApiReferenceFrame from "./components/ApiReferenceFrame.vue";
 import DocsVideo from "./components/DocsVideo.vue";
+import RedirectPage from "./components/RedirectPage.vue";
 import { setupMermaidZoom } from "./mermaid-zoom";
 import { setupImageZoom } from "./image-zoom";
 import { setupPlatformKeys } from "./platform-keys";
@@ -22,6 +23,7 @@ export default {
     app.component("DocLinkCard", DocLinkCard);
     app.component("ApiReferenceFrame", ApiReferenceFrame);
     app.component("DocsVideo", DocsVideo);
+    app.component("RedirectPage", RedirectPage);
     setupMermaidZoom();
     setupImageZoom();
     setupPlatformKeys(router);

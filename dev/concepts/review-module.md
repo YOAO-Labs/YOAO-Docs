@@ -439,4 +439,4 @@ issue 在画布上以图钉呈现，与 issues tab 列表双向联动：
 - [批次生命周期（端到端）](./batch-lifecycle-end-to-end)
 - [反馈收敛与双写对账](./feedback-convergence)
 - [工作台 Shell 架构](./workbench-shell)
-- [ADR-0005](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/archive/0005-task-lock-and-review-matrix.md)
+- [ADR-0005](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/archive/0005-task-lock-and-review-matrix.md)

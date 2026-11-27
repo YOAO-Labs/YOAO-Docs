@@ -176,4 +176,4 @@ Minimap、评论画布和相邻任务预取只消费 thumbnail/overview；审核
 Cleanup 运行五条独立 lane 和 11 项精确 owner 函数，Native 保存输出回收是其中第五条；API 与 Celery 不提供该 lane 的回退。它只处理已到期的保存输出，由 Source 签发精确保存成员和空前缀请求：完整条件 GET 校验 size、SHA-256、ETag 与记录版本后精确删除，再次条件 HEAD 证明不存在，最后以有界对象/版本/multipart 列举证明成员页已空。只有完整保存回执的 `written` 或 `verified` 成员可退休；已写入但未验证的成员须先关闭自身生产 I/O 并移除操作许可，`submitted`/`unknown` 成员和未知 I/O 均保留 barrier。版本字面量 `null` 与缺失版本不同，外来 key、版本和 multipart upload 不删除。MinIO 的 multipart 列举存在前缀过滤限制，因此实现采用有界精确归属探测，而不是假定一次前缀过滤请求即可证明所有 provider 的空前缀。页面准备未知、确认丢失或超时都不等于物理关闭；公开 URL 按冻结保留期等待后再退休。
 
 相关运维步骤见[图片金字塔运行手册](/ops/runbooks/image-pyramid)。
-客户端背景选择见 [ADR 0063](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/archive/0063-konva-viewport-image-tiles.md)，联合资源决策见 [ADR 0064](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/archive/0064-task-scoped-raster-resource-coordination.md)。
+客户端背景选择见 [ADR 0063](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/archive/0063-konva-viewport-image-tiles.md)，联合资源决策见 [ADR 0064](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/archive/0064-task-scoped-raster-resource-coordination.md)。

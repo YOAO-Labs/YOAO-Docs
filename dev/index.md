@@ -27,7 +27,7 @@ last_reviewed: 2026-10-26
 <div class="doc-card-grid">
   <DocLinkCard title="新增 API 或页面" desc="从端点、页面、迁移到测试和代码生成" href="/dev/how-to/add-api-endpoint" />
   <DocLinkCard title="理解架构" desc="从模块、状态机和数据流进入系统设计" href="/dev/concepts/" />
-  <DocLinkCard title="使用 SDK 与 CLI" desc="Python SDK、CLI、TUI 监控面板和 Cookbook" href="/dev/sdk/quickstart" />
+  <DocLinkCard title="使用 SDK 与 CLI" desc="Python SDK、CLI、TUI 监控面板和 Cookbook" href="/sdk/" />
   <DocLinkCard title="排查运行时问题" desc="按症状查找容器、网络、任务和配置问题" href="/dev/troubleshooting/" />
 </div>
 
@@ -48,37 +48,34 @@ last_reviewed: 2026-10-26
 | 修改批量或多阶段 AI 预标        | [预标注流水线](./concepts/prediction-pipeline) · [AI 预标注接管](./concepts/ai-preannotate-handoff) · [异步任务 API](/api/guides/async-jobs)                                                                                                   |
 | 在线学习与模型训练闭环          | [在线学习与训练体系](./concepts/training-datasets) · [状态机总览](./concepts/state-machines#在线学习与训练状态机)                                                                                                                              |
 | 修改视频工作台或 AI 追踪        | [视频标注工作台](./concepts/video-annotation-workbench) · [视频 AI 追踪](./concepts/video-ai-tracking) · [视频帧服务](./reference/video-frame-service)                                                                                         |
-| 修改 backend 能力声明或项目启用 | [AI 模型集成](./concepts/ai-models) · [ML Backend 接入教程](/dev/ml-backend/starter) · [ML Backend 协议](./reference/ml-backend-protocol)                                                                                                      |
+| 修改 backend 能力声明或项目启用 | [AI 模型集成](./concepts/ai-models) · [从零编写 HTTP 后端](/plugins/protocols/http-from-scratch) · [Inference Protocol v2](/plugins/protocols/inference-v2) |
 | 编写或重排文档                  | [编写文档](./how-to/write-documentation) · [按需截图与录屏](./how-to/update-screenshots) · [更新 Excalidraw 图表](./how-to/update-excalidraw-diagrams)                                                                                         |
 | 理解整体架构与代码归属          | [概念：架构地图](./concepts/) · [系统全景](./concepts/overview) · [仓库地图](./concepts/repository-map)                                                                                                                                        |
 | 跑测试或准备版本发布            | [测试指南](./testing) · [发布流程](./release)                                                                                                                                                                                                  |
 | 排查运行时问题                  | [故障排查总览](./troubleshooting/)                                                                                                                                                                                                             |
-| 查协议与底层规范                | [ML Backend 协议](./reference/ml-backend-protocol) · [WebSocket 协议](./reference/ws-protocol) · [存储桶布局](./reference/storage-buckets) · [内部 API 端点](./reference/internal-api-endpoints)                                               |
+| 查协议与底层规范                | [Inference Protocol v2](/plugins/protocols/inference-v2) · [WebSocket 协议](./reference/ws-protocol) · [存储桶布局](./reference/storage-buckets) · [内部 API 端点](./reference/internal-api-endpoints) |
 
 模型服务相关问题可先阅读[服务接入、路由与认证](./concepts/ml-backend-routing-and-auth)，再按[模型回流链路排查](./how-to/debug-model-return)定位请求、状态与代码入口。
 
-## 项目仓库结构
+## 跨仓库协作结构
 
-平台仓库包含核心前后端、独立训练执行器、共享协议包和平台 API SDK。插件作者 SDK 和官方推理插件分别在独立仓库维护：
+YOAO 由主仓本体、官方插件仓库、插件 SDK 仓库和独立文档站协同维护：
 
-| 目录                                                                                             | 语言                 | 技术栈与职责                                                                               | 入口 / 核心包                 |
-| ------------------------------------------------------------------------------------------------ | -------------------- | ------------------------------------------------------------------------------------------ | ----------------------------- |
-| `apps/api`                                                                                       | Python 3.11+         | FastAPI + SQLAlchemy 2.0 + Alembic + Celery（平台核心 API 与异步任务队列）                 | `app/main.py`                 |
-| `apps/web`                                                                                       | TypeScript           | React 18 + Vite + Zustand + TanStack Query + Konva + Three.js（前端 SPA）                  | `src/main.tsx`                |
-| `apps/training-executor`                                                                         | Python 3.11+         | 独立拉取式在线学习训练守护进程（OS `flock` 协调同一资源的执行器，支持 YOLO11 / LibreYOLO） | `training_executor/worker.py` |
-| `apps/storage-agent`                                                                             | Python 3.11+         | 跨网络只读站点存储 Agent（零入站端口、一次性配对、出站 HTTPS 命令轮询与分块上传）          | `storage_agent/cli.py`        |
-| [Plugin-SDK](https://github.com/YOAO-Labs/Plugin-SDK)                                            | Python 3.10+ / 3.11+ | 自定义推理插件的作者工具 `yoao-plugin`、推理运行时与 Mask 工具                             | `packages/inference/`         |
-| [YOAO-Plugins](https://github.com/YOAO-Labs/YOAO-Plugins)                                        | 按插件固定 Python    | 六个官方推理插件及各自的构建输入；平台使用另行核验的镜像                                   | `plugins/inference/`          |
-| `apps/_shared/{protocol_v2,task_contract,training_contract,filesystem_read,site_agent_contract}` | Python 3.10+ / 3.11+ | 平台共享协议、任务及训练契约与只读文件原语；推理运行时与 Mask 工具归独立 Plugin-SDK 仓库   | 各子包源码                    |
-| `packages/python-sdk`                                                                            | Python 3.11+         | 官方 Python SDK（`yoao-sdk`）、`yoao` CLI 与 Textual TUI 监控面板                          | `src/yoao/`                   |
-| `docs-site`                                                                                      | TypeScript           | Vue 3 + VitePress 文档站与自动化契约/图表/媒体校验脚本                                     | `.vitepress/config.ts`        |
+| 仓库 / 目录 | 语言 | 职责 | 入口 / 核心包 |
+| --- | --- | --- | --- |
+| [YOAO](https://github.com/YOAO-Labs/YOAO) (`apps/api`, `apps/web`) | Python 3.11+ / TypeScript | FastAPI 核心 API、Celery 任务队列、React 前端工作台与系统控制台 | `app/main.py`, `src/main.tsx` |
+| `YOAO` (`apps/training-executor`, `apps/storage-agent`) | Python 3.11+ | 独立拉取式在线学习训练守护进程与跨网络只读站点存储 Agent | `training_executor/`, `storage_agent/` |
+| `YOAO` (`packages/python-sdk`) | Python 3.10+ / 3.11+ | 共享协议包、`yoao-sdk` 平台 API SDK、`yoao` CLI 与 TUI 监控面板 | `src/yoao/` |
+| [YOAO-Plugins](https://github.com/YOAO-Labs/YOAO-Plugins) | Python / Node.js 20+ | 10 个官方插件：6 个推理后端、2 个训练器、飞书私信通知渠道与 LabelMe 格式适配器 | `plugins/{inference,trainer,notification-channel,format-adapter}/` |
+| [Plugin-SDK](https://github.com/YOAO-Labs/Plugin-SDK) | Python >=3.10 / Node.js >=20 | 统一插件作者 SDK：`yoao-plugin-sdk`、`yoao-plugin` CLI、`@yoao/plugin-sdk` 与 `yoao-plugin-js` | `packages/python/`, `packages/js/` |
+| [YOAO-Docs](https://github.com/YOAO-Labs/YOAO-Docs) | TypeScript / VitePress | 独立文档站与自动化校验、三仓清单/契约同步脚本 | `.vitepress/config.ts`, `scripts/` |
 
 ## 关键参考文件
 
 - 协作与开发准则：`/AGENTS.md`（`/CLAUDE.md` 为指向同一规范的软链接）
 - 本地开发与环境速查：`/DEV.md`
 - 版本历史：`/CHANGELOG.md`
-- 架构决策：`/docs/adr/` · [ADR 列表](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/README.md)（侧边栏）
+- 架构决策：`/docs/adr/` · [ADR 列表](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/README.md)（侧边栏）
 - 文档规范：[编写文档](./how-to/write-documentation)
 - 部署 / 运维：[部署与运维](/ops/)
 - 面向 AI / Coding Agent：[llms.txt](https://yoao-labs.github.io/YOAO-Docs/llms.txt)（文档索引）· [llms-full.txt](https://yoao-labs.github.io/YOAO-Docs/llms-full.txt)（全文语料）· [openapi.json](../openapi.json)（API 契约）

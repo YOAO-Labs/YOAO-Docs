@@ -1,20 +1,20 @@
 ---
-title: ML Backend 接入教程
+title: 从零编写兼容 HTTP 后端
 audience: [dev]
 type: tutorial
 status: stable
-last_reviewed: 2026-11-23
+last_reviewed: 2026-11-27
 ---
 
-# ML Backend 接入教程：自定义插件与 HTTP 契约
+# 从零编写兼容 HTTP 后端
 
-已有符合[推理 HTTP 契约](/dev/reference/ml-backend-protocol)的服务，可直接从[直连注册](#direct-registration)开始，不需要安装插件 SDK。没有现成服务时，下面的 CPU 示例只需 Python 和经核验的 wheel：先在本机检查算法，再把同一个作者入口部署到平台私网。需要平台管理镜像、启停和退役时，才走[安装档](#managed-installation)。
+已有符合[Inference Protocol v2](./inference-v2)的服务，可直接从[直连注册](#direct-registration)开始，不需要安装插件 SDK。没有现成服务时，下面的 CPU 示例只需 Python 和经核验的 wheel：先在本机检查算法，再把同一个作者入口部署到平台私网。需要平台管理镜像、启停和退役时，才走[安装档](#managed-installation)。
 
-## 使用自定义推理 SDK
+## 使用插件 SDK（`yoao-plugin-sdk[inference]`）
 
-作者 SDK 是独立的 `yoao-inference-plugin-sdk`（Python 导入 `yoao_inference_plugin`，命令 `yoao-plugin`），不是调用平台 API 的 `yoao-sdk`。开发过程不依赖平台或官方插件 checkout、数据库、管理员凭据、Torch 或模型权重。
+作者 SDK 已整合至 `Plugin-SDK` 仓库的 `yoao-plugin-sdk[inference]`（命令仍为 `yoao-plugin`，早期独立包名为 `yoao-inference-plugin-sdk`），与调用平台 API 的 `yoao-sdk` 分包分发。开发过程不依赖平台或官方插件 checkout、数据库、管理员凭据、Torch 或模型权重。若使用最新 `Plugin-SDK` 初始化，请参见[快速开发推理插件](../sdk/inference-quickstart)。
 
-先从可信渠道取得经核验的候选 SDK、平台便携契约及匹配 Python 解释器和平台的完整依赖 wheelhouse，包括 `build` 和生成项目的构建后端。指定真实 manifest 路径或 URL 与可信的 manifest SHA256，按[制品获取接口](/dev/concepts/module-deployment#plugin-candidate-artifacts)核验来源；不要假定新发行名已公开发布。第三方依赖和权重的许可分别核验。以下以 CPython 3.11 为例：
+先从可信渠道取得经核验的 SDK、平台便携契约及匹配 Python 解释器和平台的完整依赖 wheelhouse，包括 `build` 和生成项目的构建后端。指定真实 manifest 路径或 URL 与可信的 manifest SHA256，按[制品获取接口](/dev/concepts/module-deployment#plugin-candidate-artifacts)核验来源。以下示例展示离线环境下的标准工作流：
 
 ```bash
 python3.11 -m venv .venv
@@ -94,7 +94,7 @@ AAP_PLUGIN_TOKEN="$(cat ./token)" yoao-plugin check --url http://127.0.0.1:8000 
 
 4. **项目负责人启用并验证。** 在「项目设置 → 模型服务 → 管理模型服务」显式启用该服务池。选择项目内的 `multi.png` 图像任务；可用项目管理凭据调用 `POST /api/v1/projects/{project_id}/ml-backends/{backend_id}/predict-test?task_id={task_id}`。这里传**实例 ID** 而非池 ID。核对响应属于该任务，红、绿框分别为 `[10,10,20,30]`、`[50,40,30,50]`，分数均为 1。此接口只返回预测；需要保存候选时，在[项目预标注](/user-guide/projects/ai-preannotate)中选择已启用的服务和模型，执行后在任务中检查候选。批量型 `colors` 不会因此成为交互工具。
 
-**直连的能力边界。** 手动 Token 只授权平台访问服务，不授予平台启停外部进程的权力，也不产生镜像来源、GPU 驻留、签名准入或安全停机证明。没有 GPU 声明不等于已确认 CPU；受管资源仍须通过实际健康、资源与生命周期门禁。受控训练权重也不是按「直连／安装」一刀切：还需项目启用、符合要求的认证、精确实例路由，以及兼容的权重安装、加载试用和回执。普通示例没有这些能力。详见[模型服务接入、路由与认证](../concepts/ml-backend-routing-and-auth)。
+**直连的能力边界。** 手动 Token 只授权平台访问服务，不授予平台启停外部进程的权力，也不产生镜像来源、GPU 驻留、签名准入或安全停机证明。没有 GPU 声明不等于已确认 CPU；受管资源仍须通过实际健康、资源与生命周期门禁。受控训练权重也不是按「直连／安装」一刀切：还需项目启用、符合要求的认证、精确实例路由，以及兼容的权重安装、加载试用和回执。普通示例没有这些能力。详见[模型服务接入、路由与认证](/dev/concepts/ml-backend-routing-and-auth)。
 
 ## 可选：本地 GPU 资格检查
 
@@ -122,7 +122,7 @@ yoao-plugin build --base-image image@sha256:<真实摘要> \
   --entrypoint my-color-region-plugin --tag registry.example/my-detector:release --push
 ```
 
-`--push` 可省略。作者按公开推理 manifest schema 描述自己的能力、资源、启动参数和数据目录，绑定镜像可检查的实际 RepoDigest；SDK 生成镜像的可写数据目录为 `/var/lib/aap-inference`。不能用 LibreYOLO 的专属 manifest 工具为不相关的自定义插件生成身份。模型来源与许可证分别审核，清单展示不授予下载、启用或再分发权限。管理员按[插件安装流程](/user-guide/superadmin/ml-backend-registry#可安装推理插件)审核制品和资格，安装不会自动为项目启用。
+`--push` 可省略。作者按公开推理 manifest schema 描述自己的能力、资源、启动参数和数据目录，绑定镜像可检查的实际 RepoDigest；SDK 生成镜像的可写数据目录为 `/var/lib/aap-inference`。不能用 LibreYOLO 的专属 manifest 工具为不相关的自定义插件生成身份。模型来源与许可证分别审核，清单展示不授予下载、启用或再分发权限。管理员按[插件安装流程](/plugins/manage/inference-install#可安装推理插件)审核制品和资格，安装不会自动为项目启用。
 
 安装实例退役时，CPU 实例的不可逆终止排空使用认证的 `/lifecycle/terminal-drain`，并绑定注册实例和当前 boot；GPU 终止排空使用 `/lifecycle/terminal-drain-signed`，除业务 token 外还要求平台签发的 GPU DRAIN 许可。两种路径都等待真实模型借用和构建退出后卸载；业务 token 不能代替 GPU 许可，也不能重启已终止的实例。
 
@@ -130,7 +130,7 @@ yoao-plugin build --base-image image@sha256:<真实摘要> \
 
 下文的 echo 是协议教学，不是真实模型或推荐的模型实现。OCR 片段仅解释协议映射，省略具体推理封装。
 
-> **协议以 [ML Backend 协议契约](/dev/reference/ml-backend-protocol) 为准**，本文不重复抄协议；遇到字段语义疑问，一律以协议文档为权威。
+> **协议以 [Inference Protocol v2](./inference-v2) 为准**，本文不重复抄协议；遇到字段语义疑问，一律以协议文档为权威。
 
 完成本教程你将得到：
 
@@ -384,13 +384,13 @@ async def predict(req: PredictRequest):
 
 - [ ] `/health` 返回 200
 - [ ] `/setup` 声明 `protocol_version: "2.1"` 与 `compat_protocol_versions: ["2.0"]`
-- [ ] `/predict` 批量 schema 与[批量预测合同](/dev/reference/ml-backend-protocol#_2-1-批量预测-同步)对齐，至少回填 `task` + `result`
-- [ ] 如声明 `is_interactive=True`，`/predict` 也接受[交互请求](/dev/reference/ml-backend-protocol#_2-2-交互式预测)
+- [ ] `/predict` 批量 schema 与[批量预测合同](./inference-v2#_2-1-批量预测-同步)对齐，至少回填 `task` + `result`
+- [ ] 如声明 `is_interactive=True`，`/predict` 也接受[交互请求](./inference-v2#_2-2-交互式预测)
 - [ ] `/predict.context.model_variants` 支持通用 axis dict；旧字段仅作为兼容期 normalize
 - [ ] `/setup.params` 给阈值/数量/简化容差等字段标 `x-platform-role`
 - [ ] 每条 result 的 `type` 与项目类型匹配（image-det 项目至少要有 `rectanglelabels`）
-- [ ] 非法 variant 返回 422；模型暂不可用返回 503 + `Retry-After`（见[错误响应](/dev/reference/ml-backend-protocol#_6-错误响应约定)）
-- [ ] 在当前部署的推理请求时限内返回结果；先运行[协议验证](/dev/reference/ml-backend-protocol#协议验证)，再用实际平台注册和预测核对端到端结果。
+- [ ] 非法 variant 返回 422；模型暂不可用返回 503 + `Retry-After`（见[错误响应](./inference-v2#_6-错误响应约定)）
+- [ ] 在当前部署的推理请求时限内返回结果；先运行[协议验证](./inference-v2#协议验证)，再用实际平台注册和预测核对端到端结果。
 
 ## 下一步
 

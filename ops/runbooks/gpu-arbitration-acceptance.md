@@ -284,5 +284,5 @@ rm -rf /tmp/aap-gpu-acceptance
 
 - [生产 Docker Compose 部署](/ops/deploy/docker-compose)
 - [ML Backend 不可用](/ops/runbooks/ml-backend-down)
-- [ML Backend 协议](/dev/reference/ml-backend-protocol)
-- [GPU 显存仲裁 ADR](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/archive/0049-cross-backend-gpu-memory-arbitration.md)
+- [Inference Protocol v2](/plugins/protocols/inference-v2)
+- [GPU 显存仲裁 ADR](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/archive/0049-cross-backend-gpu-memory-arbitration.md)

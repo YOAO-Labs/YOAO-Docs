@@ -76,7 +76,7 @@ PATCH 必填读取到的 `expected_revision`（正整数）。先 GET 或列表�
 
 PATCH 中省略或传入 null 的字段不变更；`config` 提供时整体替换，`secret` 提供非 null 值时整体轮换，省略或 null 表示沿用已存密钥。`kind` 与 `scope` 创建后不可变更。
 
-config 拒绝未支持的键，避免拼写错误被忽略。S3 endpoint 不得内嵌用户名／密码；历史响应会移除 endpoint 的 userinfo，凭据应放入 secret。SFTP 密码和私钥必须二选一，并与 `auth_type` 一致；省略认证方式时可按唯一凭据推断，config-only 更新也会核对已存密钥。SDK/CLI 用法见 [账户、管理与运维](../../dev/sdk/account-and-operations)。
+config 拒绝未支持的键，避免拼写错误被忽略。S3 endpoint 不得内嵌用户名／密码；历史响应会移除 endpoint 的 userinfo，凭据应放入 secret。SFTP 密码和私钥必须二选一，并与 `auth_type` 一致；省略认证方式时可按唯一凭据推断，config-only 更新也会核对已存密钥。SDK/CLI 用法见 [账户、管理与运维](/sdk/account-and-operations)。
 
 ### 响应体（`StorageConnectionOut`）
 

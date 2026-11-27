@@ -72,4 +72,4 @@ Pub/Sub 没有确认、重放游标或交付保证。握手可能被拒绝，连
 - video_tracker：读取 job 与候选 preview。frame_result 的实例 ID 可能只在处理窗口内有效，事件不表示候选已成为标注。
 - ml_stats：读取 registry／health，之后再明确决定是否建立新连接。
 
-没有通用 subscribe、unsubscribe 或 reauth 消息协议。离线 describe 包含各频道 schema、鉴权和恢复入口；部署协议见 [WebSocket](../../api/guides/websocket)。
+没有通用 subscribe、unsubscribe 或 reauth 消息协议。离线 describe 包含各频道 schema、鉴权和恢复入口；部署协议见 [WebSocket](/api/guides/websocket)。

@@ -1,4 +1,4 @@
-<!-- AUTO-GENERATED — 由 docs-site/scripts/generate-settings.mjs 从 -->
+<!-- AUTO-GENERATED — 由 scripts/generate-settings.mjs 从 -->
 <!-- apps/web/src/pages/Workbench/state/workbenchSettingsFields.ts、workbenchLocalDefaults.ts 和 -->
 <!-- apps/web/src/api/auth.ts 生成。请勿手改。 -->
 

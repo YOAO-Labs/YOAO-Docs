@@ -14,14 +14,13 @@ const PAGE_LINE_LIMITS = [
 
 const SKIP_ROOTS = new Set([
   ".vitepress",
+  "_sources",
   "changelog",
-  "dev/adr",
   "dev/examples",
   "maintainers",
   "node_modules",
   "public",
   "redirects",
-  "roadmap",
   "scripts",
   "_yoao-source",
 ]);

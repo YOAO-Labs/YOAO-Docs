@@ -100,4 +100,4 @@ dispose 后 chargedBytes == 0
 测试可通过 hook 的显式 budget 覆盖档位；生产没有运行时“无限放大预算”开关。调整默认值必须同时重跑
 randomized ledger、背景/Mask 联合 E2E、hidden/BFCache、Worker crash、两页签和 dispose 归零门。
 
-相关决策见 [ADR 0064](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/archive/0064-task-scoped-raster-resource-coordination.md)。
+相关决策见 [ADR 0064](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/archive/0064-task-scoped-raster-resource-coordination.md)。

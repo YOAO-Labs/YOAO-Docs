@@ -57,7 +57,7 @@ Task 视频清单的请求准入与已就绪元信息校验在同一 `DatasetIte
 
 每次 native GET/HEAD 先取得响应 pin，重核原凭证、当前 User/Key/scope、Task 可见性或 Dataset 管理权限、同一源和 Gate，再同步重核租约仍有效，才返回 200/206/HEAD/范围错误。浏览器同源判断同时采用 Fetch Metadata；跨站与同站异源媒体请求拒绝。`original_playback_response` 用 `os.pread` 独立偏移，各响应取消后 drain 真实线程再 unpin，不关闭其他消费者的文件。完整 SHA 证明来自准备时的全量捕获。
 
-单 stage `5 GiB`、两 stage、最多 8 响应，每 stage 32 租约；准备 900 秒、transport 30 秒、响应 120 秒为合作式期限。租约 300 秒，stage 最迟 3600 秒退休，30 秒 reaper 与 lifespan 关闭负责收尾。此 API 只资格化当前单 Uvicorn 实例，其他实例或重启后的 410 必须重新 Bearer 准备；方案与取舍记录于 [ADR 0107](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0107-scoped-native-video-stages.md)。
+单 stage `5 GiB`、两 stage、最多 8 响应，每 stage 32 租约；准备 900 秒、transport 30 秒、响应 120 秒为合作式期限。租约 300 秒，stage 最迟 3600 秒退休，30 秒 reaper 与 lifespan 关闭负责收尾。此 API 只资格化当前单 Uvicorn 实例，其他实例或重启后的 410 必须重新 Bearer 准备；方案与取舍记录于 [ADR 0107](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0107-scoped-native-video-stages.md)。
 
 显示消费者按账号/session、资源及内容 UUID/SHA 管理 Blob、Bitmap、RGBA 与 GPU 资源；图片预取最多保留两份、原始字节共 `64 MiB`，前景读取仍受 `512 MiB` 单文件与既有解码预算约束。SVG 使用不透明的 data URL，普通位图使用可撤销 Blob URL；必需金字塔预览不触发完整原件下载。
 

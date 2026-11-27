@@ -10,19 +10,30 @@ const strict = process.argv.includes("--strict");
 
 const SKIP_ROOTS = new Set([
   ".vitepress",
+  "_sources",
   "changelog",
-  "dev/adr",
   "dev/examples",
   "maintainers",
   "node_modules",
   "public",
-  "roadmap",
   "scripts",
   "_yoao-source",
 ]);
 const EXEMPT_ROUTES = new Map([
   ["/user-guide/projects/annotation-guide", "legacy URL redirects to the current projects guide"],
 ]);
+
+function rewrittenRouteFor(rel) {
+  if (rel === "index.md") return "/";
+  if (rel.endsWith("/index.md")) return `/${rel.slice(0, -"index.md".length)}`;
+  return `/${rel.slice(0, -".md".length)}`;
+}
+
+const REDIRECT_ROUTES = new Set(
+  Object.entries(rewrites)
+    .filter(([src]) => src.startsWith("redirects/"))
+    .map(([, dst]) => normalizeRoute(rewrittenRouteFor(dst))),
+);
 
 function relativeToDocs(file) {
   return path.relative(docsRoot, file).replace(/\\/g, "/");
@@ -105,7 +116,7 @@ for (const navigationSource of navigationSources) {
 }
 
 const missing = [...pageRoutes.keys()]
-  .filter((route) => !discovered.has(route) && !EXEMPT_ROUTES.has(route))
+  .filter((route) => !discovered.has(route) && !EXEMPT_ROUTES.has(route) && !REDIRECT_ROUTES.has(route))
   .sort();
 
 console.log(`Navigation coverage — ${pageRoutes.size} rendered pages`);

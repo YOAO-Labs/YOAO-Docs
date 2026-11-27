@@ -2,6 +2,7 @@
 .vitepress/dist
 node_modules
 _yoao-source
+_sources
 changelog/
 public/openapi.json
 public/llms.txt

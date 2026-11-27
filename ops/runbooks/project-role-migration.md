@@ -8,7 +8,7 @@ last_reviewed: 2026-09-19
 
 # Runbook：员工项目角色迁移与回滚 {#runbook-员工项目角色迁移与回滚}
 
-本手册执行「平台身份与项目职责分离」的**一次协调切换**（见 [ADR-0075](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0075-platform-identity-vs-project-authority.md)）：把账号级 `annotator` / `reviewer` 合并为平台 `employee`，授权改由项目成员角色决定，并在同一次切换中部署匹配的 API、worker 与前端。
+本手册执行「平台身份与项目职责分离」的**一次协调切换**（见 [ADR-0075](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0075-platform-identity-vs-project-authority.md)）：把账号级 `annotator` / `reviewer` 合并为平台 `employee`，授权改由项目成员角色决定，并在同一次切换中部署匹配的 API、worker 与前端。
 
 增量边界：**Increment A（加性准备 + 贡献者证据记录）是可独立兼容部署的准备层**——它只增加向前 / 向后兼容的加性字段（可空列，或带默认值的非空列，如 `project_members.version`）并记录新工作的证据，不改变现有授权，旧二进制仍可运行；如果该功能最终不上线，平台保持可用。**完整的 Increment B 才是单次协调切换**，其内部工作包（B1…）是开发 / 评审包，**不是**可分别部署的阶段；不要只升级数据库或只升级某一层。
 
@@ -118,7 +118,7 @@ uv run python scripts/audit_project_roles.py --output /tmp/role-audit-before.jso
 - **重开写入之后**：跨项目职责或员工邀请一旦写入，旧全局角色模型无法无损表达，只能二选一——回退到**支持新 schema / 模型的新二进制**向前修复（推荐），或把旧的数据库备份恢复视为一次显式业务数据回滚（会丢失快照之后的业务写入，需业务确认）。
 - 允许旧二进制在加性 `0173` 之后运行，但它们不再维护加性列。若在回滚后重开写入，必须归档已收集的授权证据，并把受影响的可变任务标记为“完整性未知”；重新启用前审计该区间，**不能**信任早前记录部署遗留的数组。
 
-完整回滚边界与部署顺序见 [完整计划](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0075-platform-identity-vs-project-authority.md) 的 Notes 与仓库 `docs/plans/1789807315_project-scoped-employee-roles.md`。
+完整回滚边界与部署顺序见 [完整计划](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0075-platform-identity-vs-project-authority.md) 的 Notes 与仓库 `docs/plans/1789807315_project-scoped-employee-roles.md`。
 
 ## 遗留审阅证据 {#遗留审阅证据}
 
@@ -146,4 +146,4 @@ uv run python scripts/audit_project_roles.py --output /tmp/role-audit-before.jso
 - [升级指南](/ops/upgrade-guide)
 - [安全模型](/ops/security/)
 - [可见性与权限](/dev/concepts/visibility-and-permissions)
-- [ADR-0075 平台身份与项目职责分离](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0075-platform-identity-vs-project-authority.md)
+- [ADR-0075 平台身份与项目职责分离](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0075-platform-identity-vs-project-authority.md)

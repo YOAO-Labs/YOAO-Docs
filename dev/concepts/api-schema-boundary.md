@@ -101,7 +101,7 @@ pre-commit 会在 capability registry、schema 或 API 序列化文件变更时�
 
 ## 工具维度 schema（tool_bindings + tool_unit_id）
 
-[ADR-0026](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/archive/0026-tool-unit-class-and-attribute-binding.md) 把项目级扁平 `classes_config` / `attribute_schema` 改为按 `tool_unit_id` 嵌套的 `tool_bindings`。三层 schema 影响:
+[ADR-0026](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/archive/0026-tool-unit-class-and-attribute-binding.md) 把项目级扁平 `classes_config` / `attribute_schema` 改为按 `tool_unit_id` 嵌套的 `tool_bindings`。三层 schema 影响:
 
 | 层             | 字段 / 类型                                                                                                                          | 备注                                                                                                        |
 | -------------- | ------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------- |

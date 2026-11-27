@@ -49,7 +49,7 @@ function escapeForVue(text) {
   return lines.join("\n");
 }
 
-const GITHUB_BLOB = "https://github.com/YOAO-Labs/YOAO/blob/main";
+const GITHUB_BLOB = "https://github.com/YOAO-Labs/YOAO/blob/dev";
 const DOCS_GITHUB_BLOB = "https://github.com/YOAO-Labs/YOAO-Docs/blob/main";
 
 function encodeRouteStem(stem) {

@@ -286,7 +286,7 @@ POST /api/v1/video-tracker-jobs/{job_id}/decisions
 }
 ```
 
-`prompt.seeds[]` 按目标组织：`obj_id=1` 是主目标，额外 obj 在接受后各创建一条新轨迹；`prompts[]` 按绝对源帧保存提示，点的第三位 `label` 为 `1` 正点 / `0` 负点。单帧提示也可使用顶层 `bbox` / `points` 简写。`sam3_video` 使用顶层 `text`（必填）和可选 `exemplars`，不消费交互种子。完整 backend wire contract 见 [ML Backend Protocol](./ml-backend-protocol#22-interactive-predict单图或短交互)。
+`prompt.seeds[]` 按目标组织：`obj_id=1` 是主目标，额外 obj 在接受后各创建一条新轨迹；`prompts[]` 按绝对源帧保存提示，点的第三位 `label` 为 `1` 正点 / `0` 负点。单帧提示也可使用顶层 `bbox` / `points` 简写。`sam3_video` 使用顶层 `text`（必填）和可选 `exemplars`，不消费交互种子。完整 backend wire contract 见 [Inference Protocol v2](/plugins/protocols/inference-v2#22-interactive-predict单图或短交互)。
 
 后端校验：
 

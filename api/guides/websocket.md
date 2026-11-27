@@ -59,4 +59,4 @@ ws://<api-host>/ws/batches/project/{project_id}?token=<encoded-token>
 
 视频 tracker 的 `job_started`、`job_progress`、`frame_result`、`job_completed`、`job_failed`、`job_cancelled`、`job_accepted` 和 `job_discarded` 的完整语义见 [Video Tracker Jobs](./video-tracker-jobs) 与 [WebSocket 协议](../../dev/reference/ws-protocol#6-wsvideo-tracker-jobsjob_id)。
 
-Python SDK 与有时间／条数限制的 NDJSON 监听见 [公开事件流与有界监听](../../dev/sdk/streams)。六条频道独立于 REST 覆盖统计；仅连接时需要 streams extra，离线发现不需要。
+Python SDK 与有时间／条数限制的 NDJSON 监听见 [公开事件流与有界监听](/sdk/streams)。六条频道独立于 REST 覆盖统计；仅连接时需要 streams extra，离线发现不需要。

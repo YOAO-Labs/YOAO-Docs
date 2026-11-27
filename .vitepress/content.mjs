@@ -1,6 +1,31 @@
 export const rewrites = {
-  "dev/tutorials/ml-backend-starter.md": "dev/ml-backend/starter.md",
   "redirects/projects-annotation-guide.md": "user-guide/projects/annotation-guide.md",
+  "redirects/dev-ml-backend-starter.md": "dev/ml-backend/starter.md",
+  "redirects/dev-how-to-trainer-plugins.md": "dev/how-to/trainer-plugins.md",
+  "redirects/dev-reference-ml-backend-protocol.md": "dev/reference/ml-backend-protocol.md",
+  "redirects/user-guide-online-learning-ultralytics.md": "user-guide/online-learning/ultralytics.md",
+  "redirects/user-guide-online-learning-libreyolo.md": "user-guide/online-learning/libreyolo.md",
+  "redirects/dev-sdk-account-and-operations.md": "dev/sdk/account-and-operations.md",
+  "redirects/dev-sdk-agents.md": "dev/sdk/agents.md",
+  "redirects/dev-sdk-annotation-quality.md": "dev/sdk/annotation-quality.md",
+  "redirects/dev-sdk-cli.md": "dev/sdk/cli.md",
+  "redirects/dev-sdk-cookbook.md": "dev/sdk/cookbook.md",
+  "redirects/dev-sdk-data-explorer.md": "dev/sdk/data-explorer.md",
+  "redirects/dev-sdk-files-and-scenes.md": "dev/sdk/files-and-scenes.md",
+  "redirects/dev-sdk-project-workflows.md": "dev/sdk/project-workflows.md",
+  "redirects/dev-sdk-python-client.md": "dev/sdk/python-client.md",
+  "redirects/dev-sdk-quickstart.md": "dev/sdk/quickstart.md",
+  "redirects/dev-sdk-streams.md": "dev/sdk/streams.md",
+  "redirects/dev-sdk-task-workflows.md": "dev/sdk/task-workflows.md",
+  "redirects/dev-sdk-tui.md": "dev/sdk/tui.md",
+  "redirects/dev-sdk-video-and-templates.md": "dev/sdk/video-and-templates.md",
+  "redirects/dev-sdk-workflows.md": "dev/sdk/workflows.md",
 };
 
-export const srcExclude = ["maintainers/**", "dev/examples/**", "README.md", "_yoao-source/**"];
+export const srcExclude = [
+  "maintainers/**",
+  "dev/examples/**",
+  "README.md",
+  "_yoao-source/**",
+  "_sources/**",
+];

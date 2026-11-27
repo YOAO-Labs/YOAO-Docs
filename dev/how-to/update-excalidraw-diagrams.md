@@ -22,8 +22,8 @@ last_reviewed: 2026-10-19
 
 对发布文档按“是否适合长期维护”分类：稳定的架构、数据流和业务流程使用 Excalidraw；需要频繁随协议修改并审查文本 diff 的图保留 Mermaid。不以消除 Mermaid 计数为目标。
 
-- `docs-site/` 发布正文中，`/ws/video-tracker-jobs/{job_id}` 的事件序列图已建立 canonical Excalidraw 资产 `/diagrams/dev/reference/video-tracker-ws-flow.svg`，正文下方同时保留紧凑文字版事件时序，兼顾视觉直观与文本 diff 审查。
-- `docs/plans/**` 是版本化的实施决策快照，其 Mermaid 作为 Markdown 源文本原样保留，不改成依赖文档站组件的引用。若同一关系需要进入当前态发布文档，在 `docs-site/public/diagrams/` 建立 canonical Excalidraw 资产，不为统一风格反向改写历史计划。
+- 文档站发布正文中，`/ws/video-tracker-jobs/{job_id}` 的事件序列图已建立 canonical Excalidraw 资产 `/diagrams/dev/reference/video-tracker-ws-flow.svg`，正文下方同时保留紧凑文字版事件时序，兼顾视觉直观与文本 diff 审查。
+- `YOAO/docs/plans/**` 是版本化的实施决策快照，其 Mermaid 作为 Markdown 源文本原样保留，不改成依赖文档站组件的引用。若同一关系需要进入当前态发布文档，在 `YOAO-Docs` 的 `public/diagrams/` 建立 canonical Excalidraw 资产，不为统一风格反向改写历史计划。
 
 全仓盘点时使用：
 
@@ -35,10 +35,10 @@ rg -n '^```mermaid' -g '*.md' --glob '!node_modules/**' .
 
 ## 单文件合同
 
-图表放在 `docs-site/public/diagrams/<文档域>/<页面>/<图名>.svg`，路径段只使用小写字母、数字和连字号。例如：
+图表放在 `public/diagrams/<文档域>/<页面>/<图名>.svg`，路径段只使用小写字母、数字和连字号。例如：
 
 ```text
-docs-site/public/diagrams/dev/concepts/system-overview.svg
+public/diagrams/dev/concepts/system-overview.svg
 ```
 
 每个 SVG 必须满足：
@@ -59,8 +59,8 @@ docs-site/public/diagrams/dev/concepts/system-overview.svg
 2. 将字体嵌入 SVG。
 3. 包含背景，并保留适度画布留白。
 
-将导出文件直接保存到 `docs-site/public/diagrams/` 下对应的文档域。
-跨多个页面复用的 canonical 图放在 `docs-site/public/diagrams/shared/`，所有页面引用同一个 SVG，不要为不同受众复制资产。
+将导出文件直接保存到 `public/diagrams/` 下对应的文档域。
+跨多个页面复用的 canonical 图放在 `public/diagrams/shared/`，所有页面引用同一个 SVG，不要为不同受众复制资产。
 
 ### 2. 在 Markdown 中引用
 
@@ -79,8 +79,8 @@ docs-site/public/diagrams/dev/concepts/system-overview.svg
 ### 3. 校验
 
 ```bash
-pnpm --filter docs-site check:diagrams
-DOCS_BASE=/ai-annotation-platform/ pnpm --filter docs-site build
+pnpm check:diagrams
+DOCS_BASE=/YOAO-Docs/ pnpm build
 ```
 
 图表校验会拒绝：

@@ -65,7 +65,7 @@ DB 里存的是 **LabelStudio 标准格式**（保导出/CVAT 兼容性）：
 
 同步引入 **schema 边界文档与类型校验**：
 
-- `docs-site/dev/concepts/api-schema-boundary.md` — 明确「写路径用 LabelStudio 标准、读路径过 adapter 出内部 schema」
+- `dev/concepts/api-schema-boundary.md` — 明确「写路径用 LabelStudio 标准、读路径过 adapter 出内部 schema」
 - `apps/web/src/api/transforms.ts` — 5 黄金样本 + 3 idempotent/边界 case，走 codegen 派生类型
 
 ## 教训

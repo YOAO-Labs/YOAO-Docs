@@ -2,102 +2,45 @@
 audience: [dev]
 type: explanation
 status: stable
-last_reviewed: 2026-10-20
+last_reviewed: 2026-11-27
 ---
 
 # AI 模型集成
 
-协议契约见 [`ml-backend-protocol.md`](../reference/ml-backend-protocol)。本页说明当前模型服务的部署拓扑、显存预算、缓存、并发控制和能力协商。
+平台核心不再内置 PyTorch 或模型推理源码；所有推理与训练实现均在独立仓库 [YOAO-Plugins](https://github.com/YOAO-Labs/YOAO-Plugins) 维护。协议契约见 [Inference Protocol v2](/plugins/protocols/inference-v2)，具体插件规格与部署文档见 [官方插件目录](/plugins/official/)。
 
-服务实例、模型、服务池和项目发布之间的关系，以及请求如何选路、Token 如何认证，见[模型服务接入、路由与认证](./ml-backend-routing-and-auth)。该文也说明训练结果回流、默认凭据的生成与同步，以及初始化和重建容器各自解决的问题。
+服务实例、模型、服务池与项目发布之间的关系，以及请求如何选路、Token 如何认证，见[模型服务接入、路由与认证](./ml-backend-routing-and-auth)。
 
-系统托管认证以固定服务 ID 和部署指定的可信地址绑定，registry 的 `managed:<provider>` 与凭据一起参与认证修订围栏。API 只向对应地址发送该服务的凭据，禁用环境代理与重定向；URL 或认证并发变更会在短行锁下复核。凭据文件各自持久保存，服务只读自身子目录；生成默认凭据不改写已有实例认证，也不宣告服务可用。业务 Bearer 与 GPU 控制签名是独立校验，普通健康检查保持公开。其他地址按服务端要求使用 `none`／手动 `token`，`none` 不发送任何认证信息。
-
----
-
-## 0. Backend 名录
-
-Grounded SAM 2、SAM 3、YOLO、ONNXTools、RapidOCR 和 LibreYOLO 的实现位于 [YOAO-Plugins](https://github.com/YOAO-Labs/YOAO-Plugins)。下表列的是平台提供 Compose 配置的五种服务，不是默认安装清单。LibreYOLO 的受控插件安装独立于这些 Compose 配置。平台通过[能力声明协议](../reference/ml-backend-protocol)的 `/setup` 探测能力，通过 `/predict` 调用推理。
-
-| Backend                 | 端口 | profile         | 模型族                       | 主用途                                                                                       | composition                  |
-| ----------------------- | ---- | --------------- | ---------------------------- | -------------------------------------------------------------------------------------------- | ---------------------------- |
-| `grounded-sam2-backend` | 8001 | `gpu`           | GroundingDINO + SAM 2.1      | 文本/点/框交互式实例分割；暴露 `box-seg` 几何原子（多阶段下游）                              | `composite` + `atom`         |
-| `sam3-backend`          | 8002 | `gpu-sam3`      | SAM 3                        | 交互式分割（下一代 SAM）                                                                     | `composite`                  |
-| `yolo-backend`          | 8003 | `gpu-yolo`      | Ultralytics 多任务与受管模型 | 纯批量预标和在线训练受管模型安装与评估                                                       | `composite`                  |
-| `onnxtools-backend`     | 8004 | `gpu-onnxtools` | rtdetr + va                  | 二阶段车辆属性预标注；多阶段编排原子组合（上游纯检测 + 下游纯分类）                          | `atom` × 2 + `composite` × 1 |
-| `rapidocr-backend`      | 8005 | `gpu-rapidocr`  | RapidOCR（ONNX）PP-OCRv5/v6  | OCR 文本检测 / 识别；`det → cls → rec` 拆原子 + 端到端，落点 `text`/`orientation`/`language` | `atom` × 2 + `composite` × 1 |
-
-SAM 系列特化（image embedding 缓存、prompt 路由）集中在 §1–§5。`yolo-backend` / `onnxtools-backend` / `rapidocr-backend` 的差异化说明放在 §6。
-
-全局注册实例的认证可独立轮换：数据库维护单调 `auth_revision`，认证变化时原子清除健康缓存，健康探测与携带端点快照的 GPU 控制证明按该修订号复核，阻断凭据改回原值后的旧结果回写。认证更新遵守 registry → resource → promotion barrier → current membership 锁序，但不改变 GPU membership 或 fence 计数；GPU 控制签名凭据独立于实例访问 Token。URL、GPU claim 与运行参数的变更仍走原退役保护。取消意图的持久指纹在认证修订号为零时保留原格式，以兼容迁移前尚未完成的恢复。
+系统托管认证以固定服务 ID 和部署指定的可信地址绑定，registry 的 `managed:<provider>` 与凭据一起参与认证修订围栏。API 只向对应地址发送该服务的凭据，禁用环境代理与重定向；业务 Bearer 与 GPU 控制签名独立校验，普通健康检查保持公开。
 
 ---
 
-## 1. 部署拓扑
+## 0. 官方推理插件目录 {#0-backend-名录}
 
-```
-apps/api (FastAPI 3.11) ──HTTP /predict──▶ grounded-sam2-backend
-                                            FastAPI + PyTorch 2.3 + CUDA 12.1
-                                            GroundingDINO + SAM 2.1
-                                            + LRU model / embedding cache
-                       └──HTTP /predict──▶ sam3-backend
-                                            FastAPI + PyTorch 2.7 + CUDA 12.6
-                                            SAM 3
-```
+六个官方推理插件各维持独立的 Python/PyTorch/ONNX 运行环境与默认端口；详细模型目录、预训练清单与环境变量已迁移至各自插件文档：
 
-**SAM 系列必须独立服务进程**：grounded-sam2-backend 与 sam3-backend 使用不同 Python、torch、CUDA 与权重依赖；GroundingDINO Deformable Attention 算子还需要 nvcc 现场编译。共用进程会触发 ABI 冲突（TORCH_CUDA_ARCH_LIST、cudnn 版本）。
+| 插件 | 默认端口 | Compose profile | 核心任务与特性 | 插件文档 |
+| --- | --- | --- | --- | --- |
+| `grounded-sam2` | `8001` | `gpu` | 开放词汇检测、交互式图像分割与视频跟踪 | [Grounded-SAM2](/plugins/official/inference/grounded-sam2) |
+| `sam3` | `8002` | `gpu-sam3` | PCS 检测分割、交互分割与 PVS 视频跟踪 | [SAM3](/plugins/official/inference/sam3) |
+| `yolo` | `8003` | `gpu-yolo` | Ultralytics 8.4 多任务推理与自训模型回流 | [Ultralytics YOLO](/plugins/official/inference/yolo) |
+| `onnxtools` | `8004` | `gpu-onnxtools` | 两阶段车辆检测与 13+11 属性分类（atom/composite） | [ONNXTools](/plugins/official/inference/onnxtools) |
+| `rapidocr` | `8005` | `gpu-rapidocr` | PP-OCRv5/v6 原子检测/方向校正与识别（atom/composite） | [RapidOCR](/plugins/official/inference/rapidocr) |
+| `libreyolo` | `8000` | 插件安装 | 原生 YOLOv9 检测与 `libreyolo` 自训模型回流 | [LibreYOLO](/plugins/official/inference/libreyolo) |
 
-### 1.1 固定插件镜像与独立 GPU profile
+## 1. 平台侧集成架构
 
-所有官方推理实现由 [YOAO-Plugins](https://github.com/YOAO-Labs/YOAO-Plugins/tree/main/plugins/inference) 维护。平台不再构建本地 SAM 源码；`docker-compose.ml.yml` 是共享叠加，服务由各插件的 `docker-compose.ml-<provider>.yml` 显式启用。
+### 1.1 进程隔离与镜像消费边界
 
-| 插件          | 叠加文件                          | profile         | 端口   |
-| ------------- | --------------------------------- | --------------- | ------ |
-| Grounded-SAM2 | `docker-compose.ml-gsam2.yml`     | `gpu`           | `8001` |
-| SAM3          | `docker-compose.ml-sam3.yml`      | `gpu-sam3`      | `8002` |
-| YOLO          | `docker-compose.ml-yolo.yml`      | `gpu-yolo`      | `8003` |
-| ONNXTools     | `docker-compose.ml-onnxtools.yml` | `gpu-onnxtools` | `8004` |
-| RapidOCR      | `docker-compose.ml-rapidocr.yml`  | `gpu-rapidocr`  | `8005` |
+- **跨服务 ABI 隔离**：Grounded-SAM2（Python 3.10 / CUDA 12.1）与 SAM3（Python 3.12 / CUDA 12.8）使用各自固定的底层库与子模块，必须作为独立进程部署，严禁合并 Python 环境。
+- **Compose 与插件安装共存**：平台提供 `docker-compose.ml.yml` 叠加文件与受管插件 CLI 安装（`yoao plugins`）两种模式；前者由 `docker-compose.ml-<provider>.yml` 启用，后者由管理员审批 `@sha256:...` 镜像摘要与物理卡资源（见[安装官方与自定义推理插件](/plugins/manage/inference-install)）。
+- **推理请求与 `/setup` 消费**：平台核心通过 `POST /predict` 派发推理，经 `/setup` 读取模型目录、变体轴、交互能力与 `output_attribute_schema`。后端内部端点 `/cache/stats` 与 `/metrics` 不进入平台 API 契约。
 
-启用前配置对应镜像仓库、已审核的 manifest digest 与生命周期源码摘要，并准备获准模型资产和凭据映射。例如：
+### 1.2 单实例并存与双 LRU 池原则
 
-```bash
-docker compose -f docker-compose.yml -f docker-compose.ml.yml -f docker-compose.ml-gsam2.yml --profile gpu up -d grounded-sam2-backend
-```
+单容器内图像与视频模型分别驻留于独立容量的 LRU 池并共享冷构建锁。受管 GPU 卸载须同时清空图像池、视频池及 Embedding 缓存，当且仅当 builder、borrower 与 GPU 常驻对象全部归零时，才可在显存账本核减占用。
 
-不启用插件时无需提供镜像变量或 GPU。每个服务只绑定一张明确的物理卡；多个 SAM 服务使用各自的 registry／resource 身份，不能共享一个 registry UUID。Compose 所有权不等于原生安装所有权，维护 runner 不会接管原生插件容器。完整配置与停机顺序见[部署说明](/ops/deploy/docker-compose#docker-compose-启用-gpu-service)。
-
-### 1.2 显存预算 + variant 选型
-
-每个 backend 常驻 = SAM 模型权重 + GroundingDINO 权重 + 推理时 mask buffer + embedding cache buffer。`SAM_VARIANT` / `DINO_VARIANT` 是默认主变体；请求也可以通过 `/predict context` 携带 `sam_variant` / `dino_variant`，由 backend 内部 ModelPool 按 LRU 缓存和驱逐。
-
-| SAM 变体         | 模型权重 | 推理时峰值 | 推荐显存 | 推荐卡              |
-| ---------------- | -------- | ---------- | -------- | ------------------- |
-| `tiny` (default) | ~155MB   | ~3GB       | 6GB+     | 4060 8GB / 3070 8GB |
-| `small`          | ~185MB   | ~4GB       | 8GB+     | 3070 / 4070         |
-| `base_plus`      | ~320MB   | ~5GB       | 10GB+    | 3080 / 4070 Ti      |
-| `large`          | ~895MB   | ~7GB       | 12GB+    | 3090 24GB / A4000   |
-
-GroundingDINO 额外占用：`T` ~700MB / `B` ~1.5GB（仅 mask + box 模式需要，box 模式跳过 SAM 仍占 DINO）。
-
-embedding cache buffer：`EMBEDDING_CACHE_SIZE` 默认 16 entries；按 GPU 显存富余度调到 16~64，`large` 变体建议保守配置。
-
-**显存预算表（典型 dev / 生产组合）**：
-
-| GPU                 | 推荐 SAM          | 推荐 DINO | 单实例总显存 | 可同卡跑变体数      |
-| ------------------- | ----------------- | --------- | ------------ | ------------------- |
-| 4060 / 3060 (8GB)   | tiny              | T         | ~3.7GB       | 1 (单变体)          |
-| 3070 / 4070 (12GB)  | small / base_plus | T         | ~4.7-5.7GB   | 1-2                 |
-| 3090 / A4000 (24GB) | large             | T 或 B    | ~7.7-8.5GB   | 2-3 (多容器并存)    |
-| A100 40GB / H100    | large             | B         | ~8.5GB       | 4+ (整租户多变体池) |
-
-**多容器并存**：每个实例分别固定镜像、物理 GPU、注册身份和资源预算，再通过服务池治理路由。单容器内需要少量变体切换时，可使用 ModelPool；所有变体的 SAM、DINO 与 BERT 资产都须由管理员事先准备，不能依靠运行时自动下载。
-
-单容器内的图像与视频模型由两个独立容量的 LRU 池管理，但共享冷构建串行锁；图像 predictor 与 embedding cache 作为同一条目共同借出和释放。受管卸载会同时清空 image/video 两池，只有两池的 builder、borrower 与 GPU artifact 都可信归零时，`residency.gpu_loaded=false` 才能作为显存账本减账依据。每个部署仍须完成真实模型的加载、淘汰和全量卸载回落验收后，才可开启受管能力。
-
-### 1.3 镜像基础 + checkpoint 同步
-
-插件仓库独立固定 Python、Torch、CUDA、vendor 提交和第一方依赖；平台仅消费审核后的镜像，不再通过平台 checkout 链接模型实现或共享 Mask 源码。Mask 工具来自独立 Plugin-SDK 的固定制品。
+---
 
 Grounded-SAM2 与 SAM3 的模型目录均为 `/app/checkpoints`，由各自持久卷提供。管理员按插件随版本发布的资产清单核验大小、SHA256、来源和许可证；启动不下载权重、不接受 gated 许可，也不向插件提供 S3 管理凭据。图片、PVS 和 multiplex 需要的文件分别准备，目录可见或健康检查通过不代表已获准使用。
 
@@ -252,66 +195,13 @@ histogram_quantile(0.95,
 
 ---
 
-## 5. 协议契约引用
+## 5. 协议契约与官方实现对照
 
-请求与响应字段以 [`ml-backend-protocol.md`](../reference/ml-backend-protocol) §2 为准。`/cache/stats` / `/metrics` **不进协议契约**——它们是 backend 内部端点，平台 API 不会消费。
+请求、响应与 `/managed-models` 协议细节以 [Inference Protocol v2](/plugins/protocols/inference-v2) 为准。
 
----
-
-## 6. YOLO / ONNX / OCR 通用推理 backend
-
-[官方插件仓](https://github.com/YOAO-Labs/YOAO-Plugins/tree/main/plugins/inference)统一维护 Grounded-SAM2、SAM3、YOLO、ONNXTools、RapidOCR 与 LibreYOLO。平台按已审核的镜像 digest 部署独立服务，模型权重和项目启用仍须单独批准。
-
-### 6.1 yolo-backend（8003 / `gpu-yolo`）
-
-- **内置模型目录（Ultralytics）**：
-  - 检测、分割、姿态与旋转框的模型组合由插件 `/setup` 发布；权重经 `yolo_checkpoints` 卷持久化。
-  - LibreYOLO 由独立插件提供，不通过 Ultralytics 目录冒用其身份。
-- **在线训练受控模型安装（`/managed-models`）**：
-  - YOLO 插件的 `ManagedModelStore` 接收 `POST /managed-models`，下载受控原生权重并核验字节数、SHA-256、任务、框架、架构和类别顺序，在 checkpoint 目录的 `managed/{version_id}` 原子保存 `weights.pt` 与 `receipt.json`。
-  - 平台用 `trained:{version_id}` 和冻结引用访问具体部署。安装后须完成固定图片试用，再由负责人按任务人工发布，才能用于普通预标；候选评估与主动选样有各自的资格检查。受控实例分割首批限定 `yolo11n-seg`，输出原图逐实例 RLE。详见[受控模型部署协议](../reference/ml-backend-protocol)与[实例分割闭环](./instance-segmentation-learning)。
-- **逐样本评估收据端点（`/managed-evaluation/*`）**：
-  - 真实推理复用 `POST /predict` 的 `context.sample_evaluation`；辅助 GET profile、GET requests 和 POST seal 用于环境核验、持久收据和停止／恢复。分割使用独立 `/managed-evaluation/segment/*` 命名空间。平台评估器从冻结真值及预测计算 TP／FP／FN、mask IoU／Dice 与错误诊断；LibreYOLO 尚未开放共享逐样本评估。
-
-### 6.2 onnxtools-backend（8004 / `gpu-onnxtools`）
-
-**二阶段车辆属性预标注**：rtdetr 检测出框 → 对机动车框跑 va 分类出**车型（13 类）+ 颜色（11 类）** → 写入框 `attributes`。基于 [onnxtools `VehicleAttributePipeline`](https://github.com/yyq19990828/onnxtools) 封装。
-
-**镜像与模型注入**：使用经过部署审核的官方镜像及 manifest digest；通过 `ONNXTOOLS_MODELS_PATH` 将已审核的两个模型只读挂载到 `/app/models`。文件可见不代表已获使用授权。
-
-**三 model 暴露（原子化范式）**：`/setup` 广播三个 model，各架在自己的单模型推理类上、按需懒加载——detect-only 部署只加载 `RtdetrORT`、classify-only 只加载 `VehicleAttributeORT`。
-
-| `model_id`              | `task`           | `composition` | 推理类                                                 | 编排定位                                                     |
-| ----------------------- | ---------------- | ------------- | ------------------------------------------------------ | ------------------------------------------------------------ |
-| `vehicle-detect`        | `detection`      | `atom`        | 独立 `RtdetrORT`                                       | 多阶段编排**上游**（只出 bbox，属性留空交下游）              |
-| `vehicle-attr-classify` | `classification` | `atom`        | 独立 `VehicleAttributeORT`                             | 多阶段编排**下游**（整图当一辆车，跳过 rtdetr，写车型/颜色） |
-| `vehicle-attr`          | `detection`      | `composite`   | `VehicleAttributePipeline`（内部串 detect + classify） | 单阶段一锅端（开箱即用，内部编排复合）                       |
-
-`composition` 由能力声明协议（详 [ADR 0043 — 多阶段预标注编排](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/archive/0043-staged-preannotation-pipeline.md)）引入：`atom` 才能进**编排下游 stage** 选择器（只组合 atom，避免重复编排）；`composite` 在单阶段配置可直接选用。模型市场目录 ModelCard / 列表视图均补「原子 / 内置流程」徽标。
-
-**`/unload` + idle-unload**：`POST /unload` 释放全部已加载句柄（模型市场卸载按钮直接生效，UI 零改动）；末次推理后空闲 `ONNXTOOLS_IDLE_UNLOAD_SECONDS`（默认 600s）自动卸载。按 model 句柄粒度释放显存——原子化让 detect-only 工作流不再背 va 分类器显存。与 yolo 体验对齐。
-
-**协议 `output_attribute_schema`**：`vehicle-attr` / `vehicle-attr-classify` 在 `/setup` 自报输出属性 schema（含每个 select 字段的 `options`，value + 中文 label），沿 `ml_capabilities` 透传到前端，供「从模型服务预填」一键合并进项目工具单位的 `attribute_schema`。`vehicle-detect` 纯检测不写 `attributes`，不声明 `output_attribute_schema`。
-
-### 6.3 rapidocr-backend（8005 / `gpu-rapidocr`）
-
-**平台首个真实 OCR backend**：基于 RapidOCR（ONNX），把 `det → cls → rec` 三段拆为「原子能力 + 端到端编排」，对外自报三个 model，激活协议早留好的 `ocr` 任务族，并成为 `attributes.text` / `orientation` / `language` 落点校验的首个真实 producer。
-
-| `model_id` | `task`      | `composition` | `supported_inputs` | 编排定位                                                                    |
-| ---------- | ----------- | ------------- | ------------------ | --------------------------------------------------------------------------- |
-| `ocr-det`  | `detection` | `atom`        | `full_image`       | 整图文本检测，出文本 polygon 框，不写 `attributes`                          |
-| `ocr-rec`  | `ocr`       | `atom`        | `crop`             | 吃裁剪图，内部跑 cls 做 180° 校正，写回 `text` / `orientation` / `language` |
-| `ocr-e2e`  | `ocr`       | `composite`   | `full_image`       | 单阶段一锅端 det + cls + rec，出 polygon + 文本属性                         |
-
-cls（文本行方向 0/180）**语言/版本无关**，内化进 rec 与 e2e，不单独暴露 model 条目。
-
-**下游识别原子可作跨 backend 编排**：`ocr-rec` 吃 crop，可以做任何上游检测器（YOLO / gsam2 / onnxtools 等）的下游识别阶段——「上游任意 backend 出框 → 裁 crop → 下游 rec 认字写回 `text`」是平台支持的跨 backend 流水线形态。
-
-**变体轴 PP-OCRv5/v6 × 尺寸档 × 通用（中英）/英文**：`ocr-det` / `ocr-rec` / `ocr-e2e` 自报 `supported_variants`（version / size / lang），`/predict context.model_variants` 选档落到 RapidOCR 的 `Det.ocr_version` / `Rec.ocr_version` / `Rec.model_path`。
-
-**引擎池 + 阈值显式下发**：`det` / `rec` / `e2e` 同 variant 共享池化 `RapidOCR` 实例（`pool_key = det+cls+rec` 三件套路径）；`update_params` 对 `None` 是跳过不重置，缺参传 `None` 会让上一次请求的 `text_score` / `box_thresh` / `unclip_ratio` 粘在引擎上污染后续请求（含跨原子类型、跨项目）——预测器缺参显式回落 catalog 默认值并每次写定，跨请求泄漏从结构上消除。
-
-**镜像基础**：`nvidia/cuda:12.8.1-cudnn-runtime-ubuntu22.04`（与瘦身后的 onnxtools 共享 nvidia/cuda runtime base）；GPU 可选，缺 GPU 自动 fallback CPU 仍可用。
+- **多阶段编排（`atom` / `composite`）**：由能力声明协议引入（[ADR-0043](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/archive/0043-staged-preannotation-pipeline.md)），仅 `atom` 模型可作为全局编排的下游 Stage，`composite` 适合单阶段开箱即用。
+- **自训模型回流**：平台通过 `POST /managed-models` 下发冻结训练权重并在回执中锁定 `inference_runtime`；Ultralytics 与 LibreYOLO 的完整支持范围分见 [YOLO 插件](/plugins/official/inference/yolo) 与 [LibreYOLO 插件](/plugins/official/inference/libreyolo)。
+- **跨插件属性与 OCR 映射**：[ONNXTools](/plugins/official/inference/onnxtools) 自报 `output_attribute_schema` 预填属性，[RapidOCR](/plugins/official/inference/rapidocr) 的 `ocr-rec` 可作为任意上游框检测器的下游识别 Stage。
 
 ---
 

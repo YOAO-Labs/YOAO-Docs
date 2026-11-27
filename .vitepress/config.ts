@@ -4,11 +4,16 @@ import { existsSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { rewrites, srcExclude } from "./content.mjs";
-import { apiSidebar } from "./navigation/api";
+import { apiAndSdkSidebar } from "./navigation/api";
 import { devSidebar } from "./navigation/dev";
 import { nav } from "./navigation/nav";
 import { opsSidebar } from "./navigation/ops";
+import { pluginsSidebar } from "./navigation/plugins";
 import { userGuideSidebar } from "./navigation/user-guide";
+
+const REDIRECT_PATHS = Object.entries(rewrites)
+  .filter(([src]) => src.startsWith("redirects/"))
+  .map(([, dst]) => dst.replace(/(?:^|\/)index\.md$/, "").replace(/\.md$/, ""));
 
 const __here = dirname(fileURLToPath(import.meta.url));
 function loadSidebar(rel: string): DefaultTheme.SidebarItem[] {
@@ -21,7 +26,7 @@ const changelogSidebarItems = loadSidebar("../changelog/sidebar.generated.json")
 export default withMermaid(
   defineConfig({
     title: "YOAO",
-    description: "标注平台文档（用户 / 开发 / API）",
+    description: "YOAO 标注平台文档（使用指南 / 插件生态 / API 与 SDK / 核心开发 / 部署运维）",
     lang: "zh-CN",
     base: process.env.DOCS_BASE ?? "/",
     cleanUrls: true,
@@ -34,7 +39,7 @@ export default withMermaid(
     sitemap: {
       hostname: "https://yoao-labs.github.io/YOAO-Docs/",
       transformItems: (items) =>
-        items.filter((item) => !item.url.includes("user-guide/projects/annotation-guide")),
+        items.filter((item) => !REDIRECT_PATHS.some((path) => item.url.includes(path))),
     },
     ignoreDeadLinks: [
       /^https?:\/\/localhost(:\d+)?(\/|$)/,
@@ -74,10 +79,12 @@ export default withMermaid(
       nav,
       sidebar: {
         "/user-guide/": userGuideSidebar,
+        "/plugins/": pluginsSidebar,
+        "/api/": apiAndSdkSidebar,
+        "/sdk/": apiAndSdkSidebar,
         "/dev/": devSidebar,
         "/ops/": opsSidebar,
         "/changelog/": changelogSidebarItems,
-        "/api/": apiSidebar,
       },
 
       socialLinks: [{ icon: "github", link: "https://github.com/YOAO-Labs/YOAO" }],
@@ -123,10 +130,10 @@ export default withMermaid(
       editLink: {
         pattern: ({ filePath }) => {
           if (filePath === "changelog/index.md") {
-            return "https://github.com/YOAO-Labs/YOAO/edit/main/CHANGELOG.md";
+            return "https://github.com/YOAO-Labs/YOAO/edit/dev/CHANGELOG.md";
           }
           if (filePath.startsWith("changelog/")) {
-            return `https://github.com/YOAO-Labs/YOAO/edit/main/docs/changelogs/${filePath.slice("changelog/".length)}`;
+            return `https://github.com/YOAO-Labs/YOAO/edit/dev/docs/changelogs/${filePath.slice("changelog/".length)}`;
           }
           return `https://github.com/YOAO-Labs/YOAO-Docs/edit/main/${filePath}`;
         },

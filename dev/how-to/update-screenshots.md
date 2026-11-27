@@ -42,8 +42,8 @@ agent-browser close
 临时证据不是发布素材。仅在任务明确要求更新时，经内容和隐私复核后替换指定文件及其引用；其余已发布素材保持原样。沿用[现有存放路径](../reference/generated-artifacts#产物总表)，在相关操作旁引用。图片写准确的 `alt`；文档视频沿用 `<DocsVideo>`，保留贴切的封面、图注和必要的文字步骤或字幕／文字稿，不能只靠画面传达关键信息。短 GIF 也须有文字说明。不要按矩阵补拍或批量刷新。
 
 ```bash
-node docs-site/scripts/check-orphan-images.mjs --strict
-pnpm docs:build
+node scripts/check-orphan-images.mjs --strict
+pnpm build
 ```
 
-文件和引用检查不能代替本地预览；验证实际页面的媒体位置、可读性和播放。若明确要求更新首页 Hero **静态卡片**，可用 `pnpm --filter docs-site media:home-hero --asset <id>` 将核对过的源图转换为 WebP；该命令不操作浏览器。
+文件和引用检查不能代替本地预览；验证实际页面的媒体位置、可读性和播放。若明确要求更新首页 Hero **静态卡片**，可用 `pnpm media:home-hero --asset <id>` 将核对过的源图转换为 WebP；该命令不操作浏览器。

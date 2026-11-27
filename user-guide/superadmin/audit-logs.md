@@ -15,7 +15,7 @@ last_reviewed: 2026-10-25
 
 `/audit`（仅 super_admin 有前端入口；API 列表端点 project_admin 可访问，导出仅 super_admin）
 
-项目管理员的 API 列表按其当前负责项目过滤，计数和分页使用相同范围；主对象的数据库归属优先于上下文字段。反馈、邀请、数据集关联、视频章节及批次删除历史通过已验证关联或删除上下文纳入。全局用户、系统和无可靠项目归属的事件仅超级管理员可见；月汇总、归档与导出也仅超级管理员可用。脚本操作见 [账户、管理与运维](../../dev/sdk/account-and-operations)。
+项目管理员的 API 列表按其当前负责项目过滤，计数和分页使用相同范围；主对象的数据库归属优先于上下文字段。反馈、邀请、数据集关联、视频章节及批次删除历史通过已验证关联或删除上下文纳入。全局用户、系统和无可靠项目归属的事件仅超级管理员可见；月汇总、归档与导出也仅超级管理员可用。脚本操作见 [账户、管理与运维](/sdk/account-and-operations)。
 
 ## 表结构要点
 
@@ -164,7 +164,7 @@ docker exec ai-annotation-platform-postgres-1 psql -U user -d annotation -c \
 
 ## 分区策略
 
-`audit_logs` 按月分区（[ADR 0007](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/archive/0007-audit-log-partitioning.md)）。运维上每月初由 cron 创建下月分区，旧分区可按合规策略归档/删除（默认保留 12 个月）。
+`audit_logs` 按月分区（[ADR 0007](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/archive/0007-audit-log-partitioning.md)）。运维上每月初由 cron 创建下月分区，旧分区可按合规策略归档/删除（默认保留 12 个月）。
 
 ### 读取历史归档
 

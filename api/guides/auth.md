@@ -7,7 +7,7 @@ last_reviewed: 2026-10-20
 
 # 认证
 
-SDK/CLI 的显式会话、个人账户、分页用户管理与敏感输入说明见 [账户、管理与运维](../../dev/sdk/account-and-operations)。登录／刷新返回的 JWT 不会自动替换 SDK Client 凭据。项目管理员的直接分组修改与批量分组共用可管理用户范围，外部项目管理员目标不可修改。
+SDK/CLI 的显式会话、个人账户、分页用户管理与敏感输入说明见 [账户、管理与运维](/sdk/account-and-operations)。登录／刷新返回的 JWT 不会自动替换 SDK Client 凭据。项目管理员的直接分组修改与批量分组共用可管理用户范围，外部项目管理员目标不可修改。
 
 ## 登录
 
@@ -285,7 +285,7 @@ PATCH 省略 `expires_in_days` 保留原值，显式 `null` 清除有效期。�
 
 ## 相关
 
-- [WebSocket token 续签](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/archive/0011-websocket-token-reauth.md)
+- [WebSocket token 续签](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/archive/0011-websocket-token-reauth.md)
 - [安全模型](../../ops/security/)
 
 单批次使用 `POST /api/v1/projects/{project_id}/batches/{batch_id}/assignment-preview` 预览，提交 `annotator_id`、`reviewer_id`（显式 `null` 表示清除）。确认时将同样字段和 `preview_version` 提交到 `/assignment-apply`。单批次与项目分派共用任务负载与版本校验，确认后写入分派审计。

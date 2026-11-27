@@ -7,7 +7,7 @@ last_reviewed: 2026-11-23
 
 # 后端模块解耦、插件化与独立部署
 
-当前默认部署是模块化单体。API 与 worker 可以在同一进程、同一事务中调用领域 owner 的固定能力，不直接读写对方私表。只有资源隔离、安全隔离或扩缩需求明确时才拆进程；拆进程不改变数据所有权。设计依据见 [ADR-0186](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/archive/0186-modular-monolith-and-on-demand-extraction.md)。
+当前默认部署是模块化单体。API 与 worker 可以在同一进程、同一事务中调用领域 owner 的固定能力，不直接读写对方私表。只有资源隔离、安全隔离或扩缩需求明确时才拆进程；拆进程不改变数据所有权。设计依据见 [ADR-0186](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/archive/0186-modular-monolith-and-on-demand-extraction.md)。
 
 本页只记录当前源码的进程选择、凭据边界和未完成事项。部署命令见[运维手册](/ops/deploy/docker-compose#module-process-selection)，既有安装的切换顺序见[升级门禁](/ops/upgrade-guide#split-topology-upgrade)。历史验收不能代替本次部署的就绪、权限和恢复检查。
 
@@ -48,15 +48,15 @@ last_reviewed: 2026-11-23
 
 ### API SDK 与插件 SDK {#api-sdk-and-plugin-sdk}
 
-`yoao-sdk`／`yoao` 面向平台 API 调用者与插件管理员。`yoao-inference-plugin-sdk`／`yoao-plugin` 面向推理插件作者。管理员安装插件和作者编写插件是两条入口。共享任务词表与生命周期证明由平台契约包维护，不把平台私有 API、数据库权限或模型运行时装入普通 SDK。官方插件源码归 [YOAO-Plugins](https://github.com/YOAO-Labs/YOAO-Plugins)，作者工具、推理运行时与 Mask 工具归 [Plugin-SDK](https://github.com/YOAO-Labs/Plugin-SDK)。
+`yoao-sdk`／`yoao` 面向平台 API 调用者与插件管理员。`yoao-plugin-sdk`／`yoao-plugin`（原 `yoao-inference-plugin-sdk`）面向插件作者。管理员安装插件和作者编写插件是两条入口。共享任务词表与生命周期证明由平台契约包维护，不把平台私有 API、数据库权限或模型运行时装入普通 SDK。官方插件源码归 [YOAO-Plugins](https://github.com/YOAO-Labs/YOAO-Plugins)，作者多语言 SDK、CLI 与运行时归 [Plugin-SDK](https://github.com/YOAO-Labs/Plugin-SDK)。
 
 ### 公开第一方制品与独立消费 {#plugin-candidate-artifacts}
 
-用独立确认的 SHA-256 核验 manifest 和制品，再按[本地开发教程](/dev/tutorials/local-dev)或[推理插件接入教程](/dev/ml-backend/starter)安装。第一方 wheel 不包含第三方 wheelhouse、模型权重或 OCI 镜像。旧公开发布不能证明新候选已发布；取得镜像摘要也不等于权重获准或可用。[受控资产准备](/ops/deploy/docker-compose#_8-5-受控训练执行器-training-executor)由部署管理员负责。
+用独立确认的 SHA-256 核验 manifest 和制品，再按[本地开发教程](/dev/tutorials/local-dev)或[快速开发推理插件](/plugins/sdk/inference-quickstart)安装。第一方 wheel 不包含第三方 wheelhouse、模型权重或 OCI 镜像。旧公开发布不能证明新候选已发布；取得镜像摘要也不等于权重获准或可用。[受控资产准备](/ops/deploy/docker-compose#_8-5-受控训练执行器-training-executor)由部署管理员负责。
 
 ### 通用推理插件准入与限定验收 {#inference-plugin-admission}
 
-已有 HTTP 服务走[直连](/dev/ml-backend/starter#direct-registration)，平台管理的插件走[安装](/dev/ml-backend/starter#managed-installation)。安装、服务池启用、项目绑定、模型发布和物理设备资格分别验证。manifest、`/setup` 和实际资格必须对应同一部署；健康探测不证明 GPU、真实权重或业务预测通过。[历次准入范围](https://github.com/YOAO-Labs/ai-annotation-platform/blob/5f2da55125d9ce647e07ee5351b5f6ee71153a7f/docs-site/dev/concepts/module-deployment.md?plain=1#L315)只适用于对应候选。
+已有 HTTP 服务走[直连](/plugins/protocols/http-from-scratch#direct-registration)，平台管理的插件走[安装](/plugins/manage/inference-install)。安装、服务池启用、项目绑定、模型发布和物理设备资格分别验证。manifest、`/setup` 和实际资格必须对应同一部署；健康探测不证明 GPU、真实权重或业务预测通过。[历次准入范围](https://github.com/YOAO-Labs/ai-annotation-platform/blob/5f2da55125d9ce647e07ee5351b5f6ee71153a7f/docs-site/dev/concepts/module-deployment.md?plain=1#L315)只适用于对应候选。
 
 ## 剩余工作台账
 

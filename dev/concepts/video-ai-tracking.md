@@ -9,7 +9,7 @@ last_reviewed: 2026-09-05
 
 视频 AI 追踪是一条独立于图片批量预标的“人在环”链路：标注员可以延展单条已有轨迹、批量延展多条轨迹，或从画布级入口发现多个新目标。worker 分窗执行，结果先暂存为 job 候选，人工接受后才写入 annotation。
 
-本页解释稳定的数据边界与执行流程。端点字段见[视频后端帧服务](../reference/video-frame-service#tracker-job)，backend wire contract 见 [ML Backend Protocol](../reference/ml-backend-protocol#22-interactive-predict单图或短交互)，WebSocket 事件见 [WS 协议](../reference/ws-protocol#6-wsvideo-tracker-jobsjob_id)。
+本页解释稳定的数据边界与执行流程。端点字段见[视频后端帧服务](../reference/video-frame-service#tracker-job)，backend wire contract 见 [Inference Protocol v2](/plugins/protocols/inference-v2#22-interactive-predict单图或短交互)，WebSocket 事件见 [WS 协议](../reference/ws-protocol#6-wsvideo-tracker-jobsjob_id)。
 
 ## 三种 AI 数据不要混用
 

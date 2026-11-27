@@ -134,6 +134,6 @@ WHERE name = 'scene-001';
 
 ## 相关
 
-- 架构决策: [ADR-0034 lidar 坐标系约定](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0034-lidar-axis-convention.md)
-- 实现计划: [lidar 坐标系约定实现计划](https://github.com/YOAO-Labs/YOAO/blob/main/docs/plans/archive/2026-06-05-v0.13.11-lidar-axis-convention.md)
-- 收尾计划: [3D 打磨与 point mask 收尾计划](https://github.com/YOAO-Labs/YOAO/blob/main/docs/plans/archive/2026-06-05-v0.13.12-3d-polish-and-pointmask.md)
+- 架构决策: [ADR-0034 lidar 坐标系约定](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0034-lidar-axis-convention.md)
+- 实现计划: [lidar 坐标系约定实现计划](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/plans/archive/2026-06-05-v0.13.11-lidar-axis-convention.md)
+- 收尾计划: [3D 打磨与 point mask 收尾计划](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/plans/archive/2026-06-05-v0.13.12-3d-polish-and-pointmask.md)

@@ -59,7 +59,7 @@ cd apps/api
 
 退出码 `0` 表示所选清单无失败；`1` 表示逐项失败或原预览中仍有失败项，成功项已经单独提交；`2` 表示清单／运行异常。中断或锁竞争后可重跑完整清单，已成功项幂等跳过；未完成的预览文件不能直接应用，应生成新文件。清单 SHA 用于发现文件变化，不是历史内容证明或签名授权。
 
-设计决策见 [ADR 0091](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/archive/0091-dataset-content-and-location-identity.md)，接口见[数据集上传与扫描](/api/guides/datasets)。
+设计决策见 [ADR 0091](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/archive/0091-dataset-content-and-location-identity.md)，接口见[数据集上传与扫描](/api/guides/datasets)。
 
 ## 受控文件系统原语与节点探测
 
@@ -79,13 +79,13 @@ cd apps/api
 
 普通 API 与目录 worker 使用 Assets 拥有的固定 PostgreSQL 能力读取观测和提交目录／分页检查点、接受修订及复核结果，不直接访问这些账本或显示编号、接纳顺序序列。能力沿用调用方事务；来源、代次、令牌及当前授权不匹配时不推进检查点。对象存储或目录读取仍由原有物理 I/O 边界执行，发布前复查实际观测证据，而不是以 SQL 快照或作业状态替代重新读取。
 
-Job 外键 `SET NULL`，数据集删除只清空来源关联，长期观测账本保留；来源引用参与位置改向/删除保护。无来源数据时 0196 可降级，有数据则保留表并回退应用入口。接口与支持预算见[目录来源与观测扫描](/api/guides/dataset-sources)，决策见[ADR 0093](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/archive/0093-resumable-directory-inventory.md)。
+Job 外键 `SET NULL`，数据集删除只清空来源关联，长期观测账本保留；来源引用参与位置改向/删除保护。无来源数据时 0196 可降级，有数据则保留表并回退应用入口。接口与支持预算见[目录来源与观测扫描](/api/guides/dataset-sources)，决策见[ADR 0093](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/archive/0093-resumable-directory-inventory.md)。
 
 ## 图片内容核验与请求快照
 
 目录观测的 `stat` 不证明内容一致。`content_snapshot.py` 为目录及固定托管 S3 共用有界 `TemporaryFile`，完整 SHA-256/图片验证后才交付同一快照。`dataset_content.py` 处理真实当前权限、来源/位置修订、绑定与响应前复检，I/O 在数据库锁外。`ScanEntry.verified_content` 与原始观测独立，旧摘要不改写；首次核验只证明此次捕获字节。API 使用自身 `read` 探测和 anchor，不把 worker 的 `dev/inode` 当跨节点内容身份。扫描 claim 固定实际内核主机证据；首次核验必须与 API 同主机，再比对来源目录及文件 identity，未知/跨主机先拒绝；已核验摘要可跨节点验证相同字节。回执在数据库触发器中禁止改写。
 
-现有任务内容身份与严格读取接口要求当前任务可见性，不开放整个来源或数据集。非 Agent 图片 content 拒绝 Range；Agent 图片可从完整核验快照交付单区间，完整缓存命中的范围能力随逻辑来源保留。详见[接口合同](/api/guides/verified-content)与 [ADR 0094](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/archive/0094-verified-request-content-snapshots.md)。
+现有任务内容身份与严格读取接口要求当前任务可见性，不开放整个来源或数据集。非 Agent 图片 content 拒绝 Range；Agent 图片可从完整核验快照交付单区间，完整缓存命中的范围能力随逻辑来源保留。详见[接口合同](/api/guides/verified-content)与 [ADR 0094](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/archive/0094-verified-request-content-snapshots.md)。
 
 ## 可标注的目录引用与可恢复批量登记
 
@@ -95,7 +95,7 @@ Job 外键 `SET NULL`，数据集删除只清空来源关联，长期观测账�
 
 登记和项目关联共用 Dataset 锁；登记按扫描锁序取得来源后对 Dataset 使用 `NOWAIT`，繁忙返回 409。Link 在锁后查重，各建档批次在锁内再次查已有 Task。普通标注写入与单任务生命周期在 Task 锁内完成有界原图核验并保持原事务，避免等待锁期间来源变化仍被保存；快照 helper 不 commit。独立扫描与 verify 仍锁外读取。最初 API Key 身份、当前授权和绑定在 I/O 后复查。
 
-业务从来源读取时使用当前 API 节点已固定锚点与实际完整读取，不因探测 TTL 到期自动重绑目录；缺失锚点、来源定位改变、停用或摘要不符会失败。来源改名、停用后恢复保留内容身份。首次登记仍需有效 `read` 探测。工作台按登录/任务/请求代次持有鉴权 Blob URL，原图未就绪禁用编辑；退休请求不能污染新任务或新账号，URL 按 owner 回收。应用回退保留 0198 及引用账本；空表才可降级。更多取舍见 [ADR 0095](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0095-immutable-directory-reference-tasks.md)，管理员流程见[服务器目录原地引用](/user-guide/datasets/import-images#服务器目录原地引用)。
+业务从来源读取时使用当前 API 节点已固定锚点与实际完整读取，不因探测 TTL 到期自动重绑目录；缺失锚点、来源定位改变、停用或摘要不符会失败。来源改名、停用后恢复保留内容身份。首次登记仍需有效 `read` 探测。工作台按登录/任务/请求代次持有鉴权 Blob URL，原图未就绪禁用编辑；退休请求不能污染新任务或新账号，URL 按 owner 回收。应用回退保留 0198 及引用账本；空表才可降级。更多取舍见 [ADR 0095](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0095-immutable-directory-reference-tasks.md)，管理员流程见[服务器目录原地引用](/user-guide/datasets/import-images#服务器目录原地引用)。
 
 ### 可恢复的批量登记
 
@@ -105,13 +105,13 @@ Job 外键 `SET NULL`，数据集删除只清空来源关联，长期观测账�
 
 预检的 SHA-256 回执、正式登记业务对象和逐项检查点分别在各自事务提交。最终业务登记与该项计数共用事务；取消保留已提交部分，过期执行者不能在核验后继续落库。暂态数据集锁/快照容量不足退避重派；单文件错误隔离并允许显式重试，已核验摘要不可改写。确认固定预检尝试身份，I/O 期间出现新版预检时拒绝旧确认。
 
-固定节点以锚点和逐项真实安全读取证明可读，探测 TTL 不终止已领取的长任务。API 确认同样重新读取固定摘要，不以扫描前几项损坏文件的探测结果否定后续正常候选。原图复制量与派生占用独立计量，目录支持 `reference/managed_copy` 与 `none/preview/on_demand` 的独立策略，默认 `reference/preview`；旧来源迁移为 `reference/none`。定位 `config` 与策略分列，Source 路径映射固定 `Item/Asset/SHA`；仅策略变化也要求新扫描和预检，旧引用内容身份不变。预览由独立记录固定父 `Asset/SHA`、规格、自身 SHA/字节和对象位置，走鉴权端点，不写 legacy `thumbnail_path` 或发签名 URL。来源停用/注销取消活动 lease，保留业务身份；托管复制原件已独立，继续可用。迁移 0199 增加可恢复账本；有历史记录时保留表，应用回退停止新尝试。取舍见 [ADR 0096](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0096-durable-directory-registration.md)。
+固定节点以锚点和逐项真实安全读取证明可读，探测 TTL 不终止已领取的长任务。API 确认同样重新读取固定摘要，不以扫描前几项损坏文件的探测结果否定后续正常候选。原图复制量与派生占用独立计量，目录支持 `reference/managed_copy` 与 `none/preview/on_demand` 的独立策略，默认 `reference/preview`；旧来源迁移为 `reference/none`。定位 `config` 与策略分列，Source 路径映射固定 `Item/Asset/SHA`；仅策略变化也要求新扫描和预检，旧引用内容身份不变。预览由独立记录固定父 `Asset/SHA`、规格、自身 SHA/字节和对象位置，走鉴权端点，不写 legacy `thumbnail_path` 或发签名 URL。来源停用/注销取消活动 lease，保留业务身份；托管复制原件已独立，继续可用。迁移 0199 增加可恢复账本；有历史记录时保留表，应用回退停止新尝试。取舍见 [ADR 0096](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0096-durable-directory-registration.md)。
 
 ### 目录管理的最小授权
 
 `Dataset.created_by` 是目录数据集的最小管理边界：活跃超管管理全部，活跃项目管理员只管理自己的数据集，来源操作另叠加位置可见性。中央 `dataset_source_access` 服务为来源列表、total、`Scan/Registration/Entry` 直接 ID 访问及保留的 AsyncJob 尝试提供相同 SQL 关系。旧数据集写入口只对已含来源的数据集叠加创建者守卫，保留其他数据集行为。混合上传、ZIP、桶扫描、连接器复制导入和同步/异步分块建任务保留初始授权，耗时 I/O 后及分块提交前复查；撤权中断未提交部分，复制路径清理本项新对象，已提交部分保留。旧排队作业若后来接入目录而缺少该授权证明，则拒绝继续。作业公开 payload 隐去内部授权证明。
 
-浏览、探测、内容核验、批量登记及扫描在 I/O 前后重读账号和具体来源权限；尝试固定初始 Key 证明，排队和执行期间的轮换、撤销、过期或 scope 收回阻止后续写入。位置启停与可见性分离，停用位置的历史原因仍可查询。位置授权用于管理，任务内容读取继续沿用分派/成员权限；撤回管理员使用权不撤销员工既有任务，停用来源/位置才会阻止其业务读图。更多取舍见 [ADR 0097](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0097-directory-ownership-previews-and-lifecycle.md)。
+浏览、探测、内容核验、批量登记及扫描在 I/O 前后重读账号和具体来源权限；尝试固定初始 Key 证明，排队和执行期间的轮换、撤销、过期或 scope 收回阻止后续写入。位置启停与可见性分离，停用位置的历史原因仍可查询。位置授权用于管理，任务内容读取继续沿用分派/成员权限；撤回管理员使用权不撤销员工既有任务，停用来源/位置才会阻止其业务读图。更多取舍见 [ADR 0097](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0097-directory-ownership-previews-and-lifecycle.md)。
 
 ## 外部 S3 与 SFTP 持续引用
 
@@ -121,7 +121,7 @@ Job 外键 `SET NULL`，数据集删除只清空来源关联，长期观测账�
 
 严格引用使用 Source 的 `reference_readers`，与连接器一次性复制导入分离。`Source/ScanEntry/Registration/Reference` 与 opaque `Item/Task` 身份复用已有模型，不新增平行资产表。S3 扫描在根 `ScanEntry.observed.checkpoint` 中逐页提交游标与结果，使用现有代次和租约；不套用 filesystem 的 inode 或整树二次目录摘要。
 
-LIST 显式 URL 编码后严格解码一次，`ContinuationToken` 原样保存；完整 key 不裁剪、不折叠。HEAD/GET 使用原始 ETag 和固定版本，检查完整响应及 SHA；每次读都会验证错误条件被拒绝。读写权限及连接修订在 I/O 前后复查。既有 `Connection → Location` 更新锁序保留，读方在 Location 锁内只以 MVCC 读取 Connection，不等待反向 Connection 锁。SDK 内建超时、条件和版本参数负责协议访问；`before-send` 限定配置 endpoint，关闭代理避免中间层路径规范化。详见 [ADR 0098](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0098-strict-external-s3-references.md)。
+LIST 显式 URL 编码后严格解码一次，`ContinuationToken` 原样保存；完整 key 不裁剪、不折叠。HEAD/GET 使用原始 ETag 和固定版本，检查完整响应及 SHA；每次读都会验证错误条件被拒绝。读写权限及连接修订在 I/O 前后复查。既有 `Connection → Location` 更新锁序保留，读方在 Location 锁内只以 MVCC 读取 Connection，不等待反向 Connection 锁。SDK 内建超时、条件和版本参数负责协议访问；`before-send` 限定配置 endpoint，关闭代理避免中间层路径规范化。详见 [ADR 0098](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0098-strict-external-s3-references.md)。
 
 ### SFTP 持续引用
 
@@ -129,7 +129,7 @@ SFTP 严格引用复用来源、扫描、登记和严格内容服务。部署者
 
 严格客户端使用独立 `HostKeys` 与 `RejectPolicy`，在认证前检查固定公钥，不加载系统 `known_hosts`；连接到白名单解析后固定的 socket 地址，防止客户端再做一次 DNS 解析。连接／认证／通道均设短超时。目录逐项有界枚举，复用 BFS 租约与末次清单核对；没有虚构持久 SFTP 游标、inode 或版本身份。
 
-`lstat` 链、句柄 `stat`、读取前后观测与完整 SHA 负责内容一致性；服务端 jail 才是根边界，这些客户端检查不能实现原子 `nofollow`。资格摘要形成扫描锚点，历史引用必须匹配原锚点。资格变更先禁用位置并提交修订、阻止旧 worker 发布，再协调 API 与 worker；只改一个进程的环境不是集群撤权。不同资格应新建位置，旧引用不自动重绑。取舍见 [ADR 0099](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0099-qualified-sftp-references.md)，部署见[只读 SFTP 引用](/ops/deploy/docker-compose#只读-sftp-引用)。
+`lstat` 链、句柄 `stat`、读取前后观测与完整 SHA 负责内容一致性；服务端 jail 才是根边界，这些客户端检查不能实现原子 `nofollow`。资格摘要形成扫描锚点，历史引用必须匹配原锚点。资格变更先禁用位置并提交修订、阻止旧 worker 发布，再协调 API 与 worker；只改一个进程的环境不是集群撤权。不同资格应新建位置，旧引用不自动重绑。取舍见 [ADR 0099](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0099-qualified-sftp-references.md)，部署见[只读 SFTP 引用](/ops/deploy/docker-compose#只读-sftp-引用)。
 
 ## 增量同步、内容修订与周期协调
 
@@ -137,7 +137,7 @@ SFTP 严格引用复用来源、扫描、登记和严格内容服务。部署者
 
 持续引用与连接器一次性复制导入共享连接配置，但保留独立的来源、扫描、预检及登记账本。预检在来源锁内从已接纳路径映射固定基线，完整读取内容后生成六类差异；上轮仅观测的条目不成为接纳基线。比较结果只有完整预检完成后才发布，取消或中断不推断缺失。
 
-确认仅新增会固定选择范围，相同项跳过，变化和未见保留历史绑定；恢复不能扩大已确认范围。正式登记仍重新严格读取，并在同一事务建立样本/项目任务与登记结果。分页差异与短期 AsyncJob 历史独立保留；旧引用始终使用原摘要及资格；普通新扫描不重绑观测，只有显式同内容重新核验可以追加读取凭据。详见 [API 合同](/api/guides/dataset-sources#手动增量差异) 和 [ADR 0100](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0100-preflight-owned-source-differences.md)。
+确认仅新增会固定选择范围，相同项跳过，变化和未见保留历史绑定；恢复不能扩大已确认范围。正式登记仍重新严格读取，并在同一事务建立样本/项目任务与登记结果。分页差异与短期 AsyncJob 历史独立保留；旧引用始终使用原摘要及资格；普通新扫描不重绑观测，只有显式同内容重新核验可以追加读取凭据。详见 [API 合同](/api/guides/dataset-sources#手动增量差异) 和 [ADR 0100](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0100-preflight-owned-source-differences.md)。
 
 ### 周期来源协调
 
@@ -153,11 +153,11 @@ SFTP 严格引用复用来源、扫描、登记和严格内容服务。部署者
 
 单项新修订仅用于完整预检中的实际内容变化。沿用严格读取、Source 序列化与 Dataset `NOWAIT`，在一个事务创建新样本及空白任务、追加修订并推进头；Key 原证明与当前授权在 I/O 后和提交前复查。托管复制跳过业务 SHA 去重，引用保持各自 `ScanEntry`。历史媒体所有权与来源影响统计查询全部修订；管理预览仅服务当前 Asset。删除历史 Item 不回退头，不丢失原业务身份。
 
-差异分类、原预检异常和仅新增确认范围不变；新修订接纳结果独立查询。周期核对门禁不因逐项接纳自动开放。应用回退保留 0203 与业务历史，禁止破坏性降级。详见 [ADR 0102](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0102-explicit-directory-content-revisions.md)。
+差异分类、原预检异常和仅新增确认范围不变；新修订接纳结果独立查询。周期核对门禁不因逐项接纳自动开放。应用回退保留 0203 与业务历史，禁止破坏性降级。详见 [ADR 0102](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0102-explicit-directory-content-revisions.md)。
 
 ### 同摘要观测重新核验
 
-完整预检的 `observation_changed` 可明确接受为同 `Item/Asset` 的新 `SourceRevision`，继承 `owns_item`，不改业务身份、原 Reference、标注及 metadata。读取先验证原始绑定，再按同 `Source/Item/Asset` 选最新接纳观测；不按当前路径头或 SHA 搜索样本，不在失败时回退旧凭据。返回上下文包含选中修订 ID，I/O 后切换证据会被发现。资格锚点变化保持阻断。无需 schema 迁移；回退入口后仍需保留已接纳账本与其严格读取。见 [ADR 0103](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0103-explicit-same-content-revalidation.md)。
+完整预检的 `observation_changed` 可明确接受为同 `Item/Asset` 的新 `SourceRevision`，继承 `owns_item`，不改业务身份、原 Reference、标注及 metadata。读取先验证原始绑定，再按同 `Source/Item/Asset` 选最新接纳观测；不按当前路径头或 SHA 搜索样本，不在失败时回退旧凭据。返回上下文包含选中修订 ID，I/O 后切换证据会被发现。资格锚点变化保持阻断。无需 schema 迁移；回退入口后仍需保留已接纳账本与其严格读取。见 [ADR 0103](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0103-explicit-same-content-revalidation.md)。
 
 托管复制的同内容重新核验与定位迁移不分配或上传新原件，也不依赖当前原件目标的写入能力；仍执行来源快照、当前授权和前驱核对。只有接纳不同内容的新修订才强制分配独立原件。
 
@@ -165,13 +165,13 @@ SFTP 严格引用复用来源、扫描、登记和严格内容服务。部署者
 
 同来源完整预检的 `not_seen → added` 配对必须由人选择、核验同 SHA 后接纳。`SourceRevision` 的前驱可以跨路径，路径内编号独立；`acceptance_order` 由数据库序列给出接纳顺序。跨路径前驱必须保留永久 `Item/Asset/SHA` 与所有权。原 Reference 不变，resolver 按同业务资产的最新接纳顺序取实际路径，不按时间或路径内编号猜测。
 
-退役旧 `SourceItem` 与建立新头、目标 `RegistrationEntry` 消费、审计同事务提交；原差异保持冻结。旧预览退出当前读取，按保存归属和实际清理证据回收，新路径按当前策略生成派生物；退休记录不等同于物理字节已删除。旧路径回归是新增候选。迁移 0204 保留原账本事实，已有移动历史时拒绝降级到旧定位读取。见 [ADR 0104](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0104-explicit-source-relocations.md)。
+退役旧 `SourceItem` 与建立新头、目标 `RegistrationEntry` 消费、审计同事务提交；原差异保持冻结。旧预览退出当前读取，按保存归属和实际清理证据回收，新路径按当前策略生成派生物；退休记录不等同于物理字节已删除。旧路径回归是新增候选。迁移 0204 保留原账本事实，已有移动历史时拒绝降级到旧定位读取。见 [ADR 0104](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0104-explicit-source-relocations.md)。
 
 ### 纯新增自动同步与受审选择规则变更
 
-周期计划显式持久化 `new_file_policy=manual|pure_additions` 与有效 IANA 显示时区（默认 `manual/UTC`）。纯新增策略固定在扫描快照并传给预检；整轮只含新增/相同且无错误才以真实 worker 节点走既有 `additions_only` 确认。任何其他差异整轮留在门禁，策略中途打开不会接管人工轮次。确认嵌套 I/O 后复核计划 `revision/token`、原账号与 Key proof，自动正式登记仅在原授权完全相符时由协调器恢复；人工正式登记仅观察。0205 降级前须暂停自动计划。固定分钟间隔不表达日历定时，时区仅控制显示。见 [ADR 0105](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0105-opt-in-pure-addition-sync.md)。
+周期计划显式持久化 `new_file_policy=manual|pure_additions` 与有效 IANA 显示时区（默认 `manual/UTC`）。纯新增策略固定在扫描快照并传给预检；整轮只含新增/相同且无错误才以真实 worker 节点走既有 `additions_only` 确认。任何其他差异整轮留在门禁，策略中途打开不会接管人工轮次。确认嵌套 I/O 后复核计划 `revision/token`、原账号与 Key proof，自动正式登记仅在原授权完全相符时由协调器恢复；人工正式登记仅观察。0205 降级前须暂停自动计划。固定分钟间隔不表达日历定时，时区仅控制显示。见 [ADR 0105](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0105-opt-in-pure-addition-sync.md)。
 
-选择规则通过独立 `preview/apply` 入口更新，仅限 `recursive/include_globs/exclude_globs`。预览绑定提议规则、`Source/Location` 修订和排序接纳头修订身份，防止移动或重新核验后复用同计数旧预览；仅评估已接纳路径，不读取外部来源。保存拒绝活动尝试，原子递增来源修订与代次并阻断旧周期计划。观测账本保持；新差异按复用的后端选择语义识别规则外路径。业务 reader 只排除这三个字段进行定位比较，其他未知配置、原根/资格/回执与内容屏障继续严格校验。见 [ADR 0106](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0106-reviewed-source-selection-changes.md)。
+选择规则通过独立 `preview/apply` 入口更新，仅限 `recursive/include_globs/exclude_globs`。预览绑定提议规则、`Source/Location` 修订和排序接纳头修订身份，防止移动或重新核验后复用同计数旧预览；仅评估已接纳路径，不读取外部来源。保存拒绝活动尝试，原子递增来源修订与代次并阻断旧周期计划。观测账本保持；新差异按复用的后端选择语义识别规则外路径。业务 reader 只排除这三个字段进行定位比较，其他未知配置、原根/资格/回执与内容屏障继续严格校验。见 [ADR 0106](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0106-reviewed-source-selection-changes.md)。
 
 ### 同步导航与证据留存
 

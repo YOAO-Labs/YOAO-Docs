@@ -21,8 +21,8 @@ last_reviewed: ${today}
 
 # 环境变量参考
 
-> **自动生成说明**：本页由 \`docs-site/scripts/generate-env-vars.mjs\` 从 \`.env.example\` 生成。
-> 修改环境变量说明请编辑 \`.env.example\` 中的注释，再运行 \`pnpm docs:gen-env-vars\`。
+> **自动生成说明**：本页由 \`scripts/generate-env-vars.mjs\` 从 \`.env.example\` 生成。
+> 修改环境变量说明请编辑 \`YOAO/.env.example\` 中的注释，再运行 \`pnpm gen:env-vars\`。
 
 `;
 

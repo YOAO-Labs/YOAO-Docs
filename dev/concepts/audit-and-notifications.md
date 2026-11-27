@@ -377,7 +377,7 @@ ORM DELETE evaluator 同步身份缓存，因此已有、脏、过期对象及�
 
 独立 `yoao_notification_publish_client` LOGIN 仅有 `identity_delivery_policy()`、`claim_identity_deliveries(jsonb)` 和 `finish_identity_delivery(jsonb)` 三项能力，不能查询或更新 Notification 表，也不持 Identity/AUTH/mail 凭据。领取 transaction 提交后才向 Redis `notify:{user_id}` 发消息；只有 Redis 接受以后才能确认 lease。锁等待后的时间由数据库检查，旧 worker lease 不能确认新领取。Redis 未确认或 publisher 崩溃时允许下一次 claim 重试；消息使用同一 Notification id，投递是 at-least-once 而非 exactly-once。
 
-默认由现有 Beat 每 10 秒安排 Notifications worker 领取注销和作业终态，不再从 Identity 是否远端推断是否处理。只有在 Redis ACL 隔离部署中使用单一 `notifications-publisher`，同时提供私网即时发布和同一 durable 循环，且不并行调度嵌入 relay。两种宿主共享 lease 和同一 outbox，不改变至少一次投递、取消或确认顺序。发布凭据只交给实际 publisher，API 订阅连接可限定为 subscribe-only。详见[部署配置](/api/guides/module-data#notifications-即时发布)和 [ADR-0121](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0121-identity-self-deactivation-and-notification-delivery.md)。
+默认由现有 Beat 每 10 秒安排 Notifications worker 领取注销和作业终态，不再从 Identity 是否远端推断是否处理。只有在 Redis ACL 隔离部署中使用单一 `notifications-publisher`，同时提供私网即时发布和同一 durable 循环，且不并行调度嵌入 relay。两种宿主共享 lease 和同一 outbox，不改变至少一次投递、取消或确认顺序。发布凭据只交给实际 publisher，API 订阅连接可限定为 subscribe-only。详见[部署配置](/api/guides/module-data#notifications-即时发布)和 [ADR-0121](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0121-identity-self-deactivation-and-notification-delivery.md)。
 
 新增可配置通知类型时要同步更新后端 `KNOWN_NOTIFICATION_TYPES` 与前端设置页标签；
 不可配置的运维类通知则刻意不进 `KNOWN`，避免被错误静音。
@@ -518,7 +518,7 @@ WS 握手时会校验 JWT，然后订阅：
 
 ## 反馈统一表(ADR-0027)
 
-反馈入口历史上散在 `bug_reports`（产品 BUG）、`annotation_comments`（标注评论）、`tasks.reject_reason`（审核驳回）和 pixel-anchored issue。当前用 `annotation_feedbacks` 表统一锚点（`anchor_type` ∈ project/task/annotation/pixel）+ `kind` ∈ issue/comment/reject/bug，并通过旧源镜像与对账任务逐步收口为单一写入入口。详见 [ADR-0027](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/archive/0027-annotation-feedback-unified-table.md)（规范由 docs/adr 维护）。
+反馈入口历史上散在 `bug_reports`（产品 BUG）、`annotation_comments`（标注评论）、`tasks.reject_reason`（审核驳回）和 pixel-anchored issue。当前用 `annotation_feedbacks` 表统一锚点（`anchor_type` ∈ project/task/annotation/pixel）+ `kind` ∈ issue/comment/reject/bug，并通过旧源镜像与对账任务逐步收口为单一写入入口。详见 [ADR-0027](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/archive/0027-annotation-feedback-unified-table.md)（规范由 docs/adr 维护）。
 
 迁移按三段式推进，每段独立可回退：
 

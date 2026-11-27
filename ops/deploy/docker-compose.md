@@ -75,7 +75,7 @@ docker compose --env-file .env.production \
 
 ## 2. 环境变量
 
-平台通过 pydantic-settings 加载，源文件：`apps/api/app/config.py`。本节按 [`.env.example`](https://github.com/YOAO-Labs/ai-annotation-platform/blob/main/.env.example) 的分块结构介绍；标 **必填** 的在 `ENVIRONMENT=production` 启动时会触发断言失败。
+平台通过 pydantic-settings 加载，源文件：`apps/api/app/config.py`。本节按 [`.env.example`](https://github.com/YOAO-Labs/YOAO/blob/dev/.env.example) 的分块结构介绍；标 **必填** 的在 `ENVIRONMENT=production` 启动时会触发断言失败。
 
 > 生产部署：基于 `.env.example` 复制 `.env.production`，逐项审过再启动。`config.py` 里有几个未列入 `.env.example` 的可选项，统一在 §2.10 兜底。
 
@@ -480,7 +480,7 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml exec \
   api python -m scripts.bootstrap_admin
 ```
 
-脚本：[`apps/api/scripts/bootstrap_admin.py`](https://github.com/YOAO-Labs/ai-annotation-platform/blob/main/apps/api/scripts/bootstrap_admin.py)。
+脚本：[`apps/api/scripts/bootstrap_admin.py`](https://github.com/YOAO-Labs/YOAO/blob/dev/apps/api/scripts/bootstrap_admin.py)。
 
 - 已存在同邮箱用户时跳过（不更新角色）
 - 写一行 `audit_logs.action = system.bootstrap_admin`，可在 SettingsPage 审计日志页搜索追溯
@@ -557,7 +557,7 @@ beat、所有 worker 和独立 owner 的数据库／对象存储写入凭据，�
 
 独立安装 CLI、CPU 后台和实际 runner 曾在限定本地数据库副本上完成续跑验收；该记录属于历史验收，不构成当前分支或部署的验收证据。它复用同一
 S3 原始版本，也不证明对象存储备份恢复、生产部署或 GPU 容量。后台重启导致 incarnation
-变化时拒绝同作业续跑。完整前提及失败处理见 [ADR-0160](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0160-coordinated-video-restore.md)。
+变化时拒绝同作业续跑。完整前提及失败处理见 [ADR-0160](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0160-coordinated-video-restore.md)。
 
 ### 5.1 Postgres
 
@@ -647,7 +647,7 @@ docker compose -f docker-compose.yml -f docker-compose.hostvols.yml up -d
    curl -fsS http://127.0.0.1:8080/health &&
      curl -fsS https://app.example.com/healthz
    ```
-5. **回退预案**：先停止写入并按具体迁移说明选择兼容的应用版本，保留已使用的内容身份、来源、用途绑定和归属账本；不能对含迁移的升级统一执行 `alembic downgrade -1`。已有映射或不可逆屏障时保留当前 schema，采用应用回退或向前修复。旧应用不理解外部引用时，不得让它接管这些记录的写入、删除或后台清理，必要时保持受控只读。只有明确允许降级、数据条件满足且已在一次性环境演练的迁移，才按指定目标执行降级；不要用 `stamp` 绕过屏障。回退前的数据库与对象存储备份必须保留，详见[内容身份决策](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/archive/0091-dataset-content-and-location-identity.md)与[升级指南](/ops/upgrade-guide)。
+5. **回退预案**：先停止写入并按具体迁移说明选择兼容的应用版本，保留已使用的内容身份、来源、用途绑定和归属账本；不能对含迁移的升级统一执行 `alembic downgrade -1`。已有映射或不可逆屏障时保留当前 schema，采用应用回退或向前修复。旧应用不理解外部引用时，不得让它接管这些记录的写入、删除或后台清理，必要时保持受控只读。只有明确允许降级、数据条件满足且已在一次性环境演练的迁移，才按指定目标执行降级；不要用 `stamp` 绕过屏障。回退前的数据库与对象存储备份必须保留，详见[内容身份决策](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/archive/0091-dataset-content-and-location-identity.md)与[升级指南](/ops/upgrade-guide)。
 
 ---
 
@@ -689,7 +689,7 @@ A: 运行连接使用了无 DDL 权限的普通角色，但没有配置迁移连
 `public` schema CREATE 权限。
 
 **Q: ML Backend 测试连接 504**
-A: 接入方实现的 `/health` 没在 `ml_health_timeout`（10s）内返回。如果你的 backend 冷启动慢，调高 `ML_HEALTH_TIMEOUT`，或在 backend 侧加 warm-up endpoint。详见 [`ml-backend-protocol.md`](/dev/reference/ml-backend-protocol)。
+A: 接入方实现的 `/health` 没在 `ml_health_timeout`（10s）内返回。如果你的 backend 冷启动慢，调高 `ML_HEALTH_TIMEOUT`，或在 backend 侧加 warm-up endpoint。详见 [Inference Protocol v2](/plugins/protocols/inference-v2)。
 
 ---
 
@@ -1019,8 +1019,8 @@ docker compose -f docker-compose.training.yml --profile training up -d training-
 ### 进一步阅读
 
 - [在线学习与训练体系](/dev/concepts/training-datasets) — 架构、状态机、参数契约与数据版本
-- [ADR-0012](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/archive/0012-sam-backend-as-independent-gpu-service.md) — 为什么 SAM backend 独立 GPU 服务化
-- [ADR-0013](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/archive/0013-mask-to-polygon-server-side.md) — mask→polygon 后端化决策
+- [ADR-0012](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/archive/0012-sam-backend-as-independent-gpu-service.md) — 为什么 SAM backend 独立 GPU 服务化
+- [ADR-0013](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/archive/0013-mask-to-polygon-server-side.md) — mask→polygon 后端化决策
 
 ---
 

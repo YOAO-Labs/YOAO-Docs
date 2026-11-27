@@ -10,7 +10,7 @@ last_reviewed: 2026-10-24
 
 包名 `yoao-sdk`,导入名 `yoao`。同步 Client,底层 httpx + pydantic v2。
 
-本页是调用平台公开 API 的 SDK，不是编写推理插件的作者 SDK。[Plugin-SDK](https://github.com/YOAO-Labs/Plugin-SDK) 独立发布作者接口、推理运行时与 Mask 工具；管理员可用本 SDK 管理安装，但这不授予插件管理员凭据或直接访问平台数据库的权限。两者的包、兼容和职责边界见[模块部署](../concepts/module-deployment#api-sdk-and-plugin-sdk)。
+本页是调用平台公开 API 的 SDK，不是编写推理插件的作者 SDK。[Plugin-SDK](/plugins/sdk/) 提供作者接口、多语言 SDK 与共享运行时；管理员可用本 SDK 管理插件安装，但这不授予插件管理员凭据或直接访问平台数据库的权限。两者的包、兼容和职责边界见[模块部署](/dev/concepts/module-deployment#api-sdk-and-plugin-sdk)。
 
 项目分页／维护、批次分派／切分／送审、数据集回填、绩效、搜索、指引图片、失败预测与标注导入见 [项目、批次与数据运维](./project-workflows)。已有资源继续沿用 `projects`、`batches`、`datasets` 等入口，另有 `project_performance`、`search`、`guide_assets` 和 `failed_predictions`。
 
@@ -95,11 +95,11 @@ with Client() as client:
 
 `create` 额外提供 keyword-only `template_id`、`source_project_id` 和 `copy_annotation_guide`。模板与源项目互斥；未明确给出的类型与 type_label 由服务器继承，明确覆盖优先。普通创建仍按 `type_key` → `data_type` → `name` 填 type_label，保持既有行为。模板不支持 copy_annotation_guide；配置继承由服务器处理，SDK 不复制合并逻辑。
 
-正文可通过 `update(project_id, annotation_guide=...)` 保存。显式提交 `guide_assets` 时，还须提交最近读取的 `guide_assets_revision`，仅能原样删减或重排当前清单；不能增加图片key或修改元数据。缺失或过时修订返回409，调用方应重新读取并核对，不能自动重试覆盖。正文单独保存不需要图片修订，详见[指南图片API合同](../../api/guides/projects.md#标注指引图片)。指南图片的认证上传、内容读取、删除及旧传输入口在覆盖清单中归为Web专用，SDK不提供图片传输方法。
+正文可通过 `update(project_id, annotation_guide=...)` 保存。显式提交 `guide_assets` 时，还须提交最近读取的 `guide_assets_revision`，仅能原样删减或重排当前清单；不能增加图片key或修改元数据。缺失或过时修订返回409，调用方应重新读取并核对，不能自动重试覆盖。正文单独保存不需要图片修订，详见[指南图片API合同](/api/guides/projects#标注指引图片)。指南图片的认证上传、内容读取、删除及旧传输入口在覆盖清单中归为Web专用，SDK不提供图片传输方法。
 
 `stats()` 返回可见项目聚合(`total_data` / `completed` / `ai_rate` / `pending_review`)+ 最近 12 周时间序列(`*_series`),任意已认证用户可达。
 
-`access()` 返回当前账号在该项目上的解析后权限(`ProjectAccess`):`platform_role`(平台角色)、`project_role`(项目角色,管理者可为 `None`)、`access_kind`(`super_admin` / `owner` / `member`)、`membership_id` / `membership_version`、`is_manager` 与 `capabilities`。`Project.my_project_role` 是列表 / 详情里当前账号的项目角色。授权来自项目成员关系而非账号全局角色,详见[可见性与权限](../concepts/visibility-and-permissions)。
+`access()` 返回当前账号在该项目上的解析后权限(`ProjectAccess`):`platform_role`(平台角色)、`project_role`(项目角色,管理者可为 `None`)、`access_kind`(`super_admin` / `owner` / `member`)、`membership_id` / `membership_version`、`is_manager` 与 `capabilities`。`Project.my_project_role` 是列表 / 详情里当前账号的项目角色。授权来自项目成员关系而非账号全局角色,详见[可见性与权限](/dev/concepts/visibility-and-permissions)。
 
 ### client.project_templates、videos、task_videos、video_tracker、video_review、storage
 

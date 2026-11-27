@@ -44,7 +44,7 @@ last_reviewed: 2026-10-19
 
 ## 输入合同需要承担的职责
 
-输入合同使用 `aap-assets-inputs/v1`，与图片派生合同共用现有 Assets Media 进程，分别持有收据和生命周期。输入副本进入独立的版本化桶，模型 URL 绑定具体 VersionId，ROI 读取同一版本并核对 SHA 和大小。共享缓存桶继续承担派生媒体的生命周期。详细取舍见 [ADR-0107](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0107-versioned-accepted-media-inputs.md)。工作台单张图片及普通图片批量路径（含 Scene 模式中的单图 Task）已接入；其余输入路径继续迁移。
+输入合同使用 `aap-assets-inputs/v1`，与图片派生合同共用现有 Assets Media 进程，分别持有收据和生命周期。输入副本进入独立的版本化桶，模型 URL 绑定具体 VersionId，ROI 读取同一版本并核对 SHA 和大小。共享缓存桶继续承担派生媒体的生命周期。详细取舍见 [ADR-0107](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0107-versioned-accepted-media-inputs.md)。工作台单张图片及普通图片批量路径（含 Scene 模式中的单图 Task）已接入；其余输入路径继续迁移。
 
 控制进程具有 52 项视频／图片／输入／清单 SQL 能力，其中跟踪输入占三项；图片 Worker 具有 6 项图片及 4 项输入能力，清理进程具有 8 项 outbox／垃圾能力。输入物化只做对象 I/O 与其租约操作，最终来源检查由 native 函数承担；不把图片控制端的 system 能力授予 Worker。Labeling 在原写事务中检查来源并登记标注 pin，派生标注继承该证据；仍有预测、标注或可重试失败项引用时，原 Job 历史清理不使输入失效。无引用后开始 30 天保留期；清理回执继续保留并定期扫描迟到版本。
 
@@ -60,7 +60,7 @@ Scene 模式图片项目中的普通单图 Task 使用同一清单及最终写�
 
 执行逐页读取，逐题下载并校验原图后再清理该题旧预测；固定失败的成员保留旧预测。每条失败保留清单来源及可用的原 Input；缺少原始字节的失败项明确拒绝重试。最终写入还核对实际 Input 所属原 Job，整组结果在回滚后整体重试，所有 Mask 内容预验证先于业务锁。后续页读取失败会记录失败作业、已处理位置与未处理数量，已保存候选保留；这不构成完整进程恢复协议。
 
-本地受限 SQL/S3 验收覆盖真实独立控制和图片执行进程、丢响应后的同输入重放、源替换、整图及 ROI 的真实版本字节、覆盖顺序、部分失败、原 Job 删除及 Task 工作流版本推进后的原输入重试。Node 消费四个清单接口并读取 1503 个冻结成员；另有 native 验收覆盖原用户删除后的证据保留。进程从安装后的 wheel 启动，不导入 API、ORM、Celery 或 Redis。详细字段和切换规则见[媒体接口](/api/guides/assets-media)及 [ADR-0108](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0108-bulk-image-input-manifests.md)。
+本地受限 SQL/S3 验收覆盖真实独立控制和图片执行进程、丢响应后的同输入重放、源替换、整图及 ROI 的真实版本字节、覆盖顺序、部分失败、原 Job 删除及 Task 工作流版本推进后的原输入重试。Node 消费四个清单接口并读取 1503 个冻结成员；另有 native 验收覆盖原用户删除后的证据保留。进程从安装后的 wheel 启动，不导入 API、ORM、Celery 或 Redis。详细字段和切换规则见[媒体接口](/api/guides/assets-media)及 [ADR-0108](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0108-bulk-image-input-manifests.md)。
 
 本地已在受限 SQL/S3 身份下通过独立控制、图片执行和清理进程验收：丢失受理响应后的同身份重放，整图模型拉取摘要与 ROI 来源一致，最新输入 key 被覆盖后仍读取原版本，来源变化与原版本缺失拒绝读取，以及未完成 multipart 和迟到版本清理。Node 消费端覆盖五项 HTTP 操作，真实候选采纳覆盖原 Job 删除、原发起者停用和 Task 工作流版本推进后的证据保留。临时输入故障会继续等待同一输入；永久失败保留明确错误。候选、人工 Mask 更新和切片恢复在对象读取前检查权限、开关与版本条件，最终持锁复核来源及当前权威；预验证内容缺失时拒绝写入，不在锁内补读。
 
@@ -76,7 +76,7 @@ Scene 模式图片项目中的普通单图 Task 使用同一清单及最终写�
 
 采纳时重新核对实际审核者、Task、分段、源标注版本和视频输入，在同一事务将原片级证据登记到每条受影响的 Annotation。原发起者后续失去权限，不替代当前审核者的检查；派生标注继承原片证据，原作业删除也不解除已有 pin。候选在采纳、丢弃或到期前保留副本；来源保留检查与实际对象清理由各自 owner 执行。
 
-批量帧和跟踪输入分别领取、回收，共用账本不会让一类 pending 输入阻塞另一类。升级前须由旧运行时排空、采纳或丢弃缺少输入快照的旧活动／待审作业；新运行时拒绝补造历史来源。边界和回退责任见 [ADR-0110](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0110-retained-tracker-video-inputs.md)。
+批量帧和跟踪输入分别领取、回收，共用账本不会让一类 pending 输入阻塞另一类。升级前须由旧运行时排空、采纳或丢弃缺少输入快照的旧活动／待审作业；新运行时拒绝补造历史来源。边界和回退责任见 [ADR-0110](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0110-retained-tracker-video-inputs.md)。
 
 ## 视频帧证据与恢复
 

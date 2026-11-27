@@ -74,7 +74,7 @@ Task 摘要明确区分 `missing`、`stale`、`inconsistent` 与生成状态，�
 
 图片回填冻结选择范围和截止时间，按有界页分两阶段推进：先读取候选，锁外观察对象，再原子比较来源、受理子作业并提交游标回执。来源变化只跳过相应条目，存储暂时不可用会保留已受理工作。清理保留迟到写入的重扫责任；删除仍被相机、轨迹或视频执行记录引用的素材返回 409，先在项目内解除引用。
 
-一般 Blob、章节和运维 reset 仍使用各自既有路径；其余推理消费方继续按各自输入迁移。完整模块状态与本地验收证据见[独立部署台账](/dev/concepts/module-deployment)、[ADR-0105](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0105-independent-video-media-owner.md)及 [ADR-0106](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0106-independent-image-media-owner.md)。
+一般 Blob、章节和运维 reset 仍使用各自既有路径；其余推理消费方继续按各自输入迁移。完整模块状态与本地验收证据见[独立部署台账](/dev/concepts/module-deployment)、[ADR-0105](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0105-independent-video-media-owner.md)及 [ADR-0106](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0106-independent-image-media-owner.md)。
 
 ## 视频跟踪的原片输入
 
@@ -96,7 +96,7 @@ Accepted-input 垃圾回收还会查询 Jobs 当前 execution 的退役事实。
 
 垃圾领取时也会重新核对尚未处理的 tracker tombstone：当前不可回收的 source 前缀会按清理租约时长延后，本页继续扫描，因此前面的保留项不会阻塞后续过期或已被新一代替代的前缀。清理 worker 默认租约为 600 秒，Native claim 接受 60–7200 秒。已领取的旧租约无法由 SQL 撤销；升级领取围栏前应停止 `apps/assets-cleanup` 并确认进程退出，再等待未完成租约到期。若不能确认进程退出，应先隔离其对象存储删除凭据。已经删除的对象版本不能通过此迁移恢复。
 
-回退领取围栏也须先确认旧清理者退出和在途删除结束，再等待已领取租约到期。跟踪输入切换见[媒体输入升级](/ops/upgrade-guide#media-input-cutover)，来源快照和保留规则见 [ADR-0110](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0110-retained-tracker-video-inputs.md)。这条专用协议不扩大旧批量预标的 frame-only 准入。
+回退领取围栏也须先确认旧清理者退出和在途删除结束，再等待已领取租约到期。跟踪输入切换见[媒体输入升级](/ops/upgrade-guide#media-input-cutover)，来源快照和保留规则见 [ADR-0110](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0110-retained-tracker-video-inputs.md)。这条专用协议不扩大旧批量预标的 frame-only 准入。
 
 ## 已受理图片输入
 
@@ -121,4 +121,4 @@ header 保留 `candidate_count`、`selected_count`、`prepared_count`；`ready_c
 
 prepare 先读取原成员，已有 Input 或固定失败时直接重放。控制服务根据捕获快照观察来源，再提交 native 准备；HTTP 调用方不能提供伪造对象身份。已知对象身份必须匹配；首次未知身份以准备时首次成功 HEAD 为字节受理时点，提交瞬间不证明未知历史内容。来源或任务绑定变化使该成员失败，不会替换为当前源。
 
-输入物化和准备等待发生在 Job 认领与模型调用之前；临时繁忙继续等待同一作业。封存后逐页、逐题使用原输入，图片旧预测与已采纳 AI 标注直到准备结果通过最终写入准入后才同事务替换；推理失败、写入回滚或取消先取得写入资格时保留旧内容。推理结果完整保存后，临时存储／写入故障及进程接管继续使用同一检查点，不重新选择任务或调用模型；确定性来源／权限拒绝仍明确失败。完整租约、回执与恢复边界见[普通批量结果检查点](./module-data#普通批量结果检查点)。升级排空见[媒体输入升级](/ops/upgrade-guide#media-input-cutover)，设计取舍见 [ADR-0108](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0108-bulk-image-input-manifests.md)。
+输入物化和准备等待发生在 Job 认领与模型调用之前；临时繁忙继续等待同一作业。封存后逐页、逐题使用原输入，图片旧预测与已采纳 AI 标注直到准备结果通过最终写入准入后才同事务替换；推理失败、写入回滚或取消先取得写入资格时保留旧内容。推理结果完整保存后，临时存储／写入故障及进程接管继续使用同一检查点，不重新选择任务或调用模型；确定性来源／权限拒绝仍明确失败。完整租约、回执与恢复边界见[普通批量结果检查点](./module-data#普通批量结果检查点)。升级排空见[媒体输入升级](/ops/upgrade-guide#media-input-cutover)，设计取舍见 [ADR-0108](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0108-bulk-image-input-manifests.md)。

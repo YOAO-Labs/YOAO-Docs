@@ -79,10 +79,10 @@ DuckDB 单机能扛到约 **亿级行**。触发以下任一条件后再迁 Clic
 - 单个面板 query 耗时 > 10s（看浏览器 Network）
 - 多用户并发读 read_only 出现锁等待
 
-→ 见 [ROADMAP §4.3 ClickHouse 升级触发条件](https://github.com/YOAO-Labs/YOAO/blob/main/ROADMAP/2026-05-18-cvat-labelstudio-inspiration.md)。
+→ 见 [ROADMAP §4.3 ClickHouse 升级触发条件](https://github.com/YOAO-Labs/YOAO/blob/dev/ROADMAP/2026-05-18-cvat-labelstudio-inspiration.md)。
 
 ## 相关
 
-- [ROADMAP §1.6 DuckDB 离线分析视图](https://github.com/YOAO-Labs/YOAO/blob/main/ROADMAP/2026-05-18-cvat-labelstudio-inspiration.md)
-- 数据源：[`apps/api/app/services/duckdb_sync.py`](https://github.com/YOAO-Labs/YOAO/blob/main/apps/api/app/services/duckdb_sync.py)
-- 固定 query：[`apps/api/app/services/analytics_queries.py`](https://github.com/YOAO-Labs/YOAO/blob/main/apps/api/app/services/analytics_queries.py)
+- [ROADMAP §1.6 DuckDB 离线分析视图](https://github.com/YOAO-Labs/YOAO/blob/dev/ROADMAP/2026-05-18-cvat-labelstudio-inspiration.md)
+- 数据源：[`apps/api/app/services/duckdb_sync.py`](https://github.com/YOAO-Labs/YOAO/blob/dev/apps/api/app/services/duckdb_sync.py)
+- 固定 query：[`apps/api/app/services/analytics_queries.py`](https://github.com/YOAO-Labs/YOAO/blob/dev/apps/api/app/services/analytics_queries.py)

@@ -13,4 +13,4 @@ last_reviewed: 2026-10-18
 
 Python 负责授权、物化视图／实时分区查询及本地归并，不依赖外部计算进程。SDK `client.audit_logs.monthly_summary()` 与 CLI `yoao audit-logs monthly-summary` 保留原入口。
 
-Go 归并仅作为独立实验保留，没有接入此公开端点。实验 wire 契约与公开 REST 分开，见 [ADR 0090](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0090-module-languages-and-audit-summary-process.md)。
+Go 归并仅作为独立实验保留，没有接入此公开端点。实验 wire 契约与公开 REST 分开，见 [ADR 0090](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0090-module-languages-and-audit-summary-process.md)。

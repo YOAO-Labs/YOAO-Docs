@@ -445,7 +445,7 @@ annotation 必须携带 `tool_unit_id: String(30)`（枚举 bbox / polyline / re
 - 老数据由 alembic 0072 backfill：`annotation_type IN ('polygon', 'mask')` → `region`，其它 → `bbox` 占位。
 - `ai_interactive` 已退役。迁移把存量 annotation / prediction 及项目 binding 归位到 `region` / `bbox`；遗留客户端继续上报该值时，写入 schema 会按 geometry type 映射并记录 warning，不会把退役值重新写回数据库。
 
-强隔离：同名类在不同 unit 下是独立记录，不能跨 unit 共享（避免回退到"项目级扁平类别表"反模式）。详见 [ADR-0026](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/archive/0026-tool-unit-class-and-attribute-binding.md)。
+强隔离：同名类在不同 unit 下是独立记录，不能跨 unit 共享（避免回退到"项目级扁平类别表"反模式）。详见 [ADR-0026](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/archive/0026-tool-unit-class-and-attribute-binding.md)。
 
 ## Task / Batch 回写
 

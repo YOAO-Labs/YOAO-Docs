@@ -81,6 +81,6 @@ Grounded-SAM-2、SAM 3、YOLO、ONNXTools 与 RapidOCR 等 ML Backend 运行预�
 
 ## 相关文档
 
-- 上游协议：[ML Backend 协议](../reference/ml-backend-protocol)
+- 上游协议：[Inference Protocol v2](/plugins/protocols/inference-v2)
 - 监控与告警：[可观测性总览](/ops/observability/)
 - 模型集成架构：[AI 模型集成](./ai-models)

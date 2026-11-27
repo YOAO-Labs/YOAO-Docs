@@ -231,7 +231,7 @@ CREATE TRIGGER trg_audit_log_no_delete BEFORE DELETE ON audit_logs ...
 
 ### 6.1 Production 安全响应头
 
-`apps/api/app/middleware/security_headers.py` 在 `environment == "production"` 时由 `main.py` 注册（详见 [ADR-0010](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/archive/0010-security-headers-middleware.md)）。dev / staging 不启用，避免本地热更新被 inline script 打挂。
+`apps/api/app/middleware/security_headers.py` 在 `environment == "production"` 时由 `main.py` 注册（详见 [ADR-0010](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/archive/0010-security-headers-middleware.md)）。dev / staging 不启用，避免本地热更新被 inline script 打挂。
 
 | Header                      | Value                                 |
 | --------------------------- | ------------------------------------- |
@@ -313,13 +313,13 @@ Identity offboarding 的 `preview_version` 是精确保留旧 Python snapshot �
 
 `preview_version` 按旧公共合同为 unbounded string；stale 409 会原样回传 `expected_preview_version`。应将其视为不可信请求数据：不要写入日志、PostgreSQL JSONB 或控制/Audit payload。预览只展示 API-key ID 和受限元数据，不返回 key secret。提交 reason 最多 500 字符，按 Python `str.strip()` 归一化后保存在目标 User 的停用原因；原始 reason 不进入 Audit、错误、日志或 native prepare JSON。`user.offboard` Audit 只记录 `reason_present`，不是完整的数据擦除或匿名化保证。提交还会在同一事务推进凭据代际、撤销 active API keys 并消费未使用的 reset links。
 
-这些敏感事实只由 Identity owner 与 Workspace／Labeling／Audit typed capabilities 协调；调用角色没有其他 owner 的原始表权限。该 owner 已通过限定的本地资格；详细事务锁序、接收人投影、重放范围、错误优先级和证据边界见 [Identity offboarding ADR](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0128-independent-identity-offboarding-commands.md)。本地资格不代表生产切换、容量或 SLO 结论。
+这些敏感事实只由 Identity owner 与 Workspace／Labeling／Audit typed capabilities 协调；调用角色没有其他 owner 的原始表权限。该 owner 已通过限定的本地资格；详细事务锁序、接收人投影、重放范围、错误优先级和证据边界见 [Identity offboarding ADR](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0128-independent-identity-offboarding-commands.md)。本地资格不代表生产切换、容量或 SLO 结论。
 
 ### 7.5 内部批量 UserBrief 富化（已通过限定本地资格）
 
 UserBrief 只供已经通过授权检查的 task、project、result 等调用方补全显示摘要；该 helper 没有 actor 参数，不是任意用户资料目录 API，也不复用 Directory 的 manager-only scope。调用方必须先授权自己的业务行，再传关联 user IDs。私有 Identity endpoint 使用内部 control Bearer；caller transaction 路径继续使用当前受限应用连接，专用 LOGIN 只可执行两项 briefs 函数。
 
-返回值仅有 `id/name/email/role/avatar_initial/avatar_ref` 六字段，不含 credential hash、generation、API key 或管理状态；对已授权关联用户保留 inactive／历史角色的既有显示语义。ProjectMember role 从 Workspace 窄投影读取，Identity/API 不获其原表权限；没有 audit、receipt、缓存或逐用户 RPC。该 owner 的最新 union 通过 64 个 selected cases（59 DB/process、5 pure/static），零跳过；精确镜像、Restore、Compose 边界和 legacy baseline 见 [Identity UserBrief ADR](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0129-identity-batched-user-brief-reads.md)。本地资格不代表生产容量、SLO 或完整 Identity。
+返回值仅有 `id/name/email/role/avatar_initial/avatar_ref` 六字段，不含 credential hash、generation、API key 或管理状态；对已授权关联用户保留 inactive／历史角色的既有显示语义。ProjectMember role 从 Workspace 窄投影读取，Identity/API 不获其原表权限；没有 audit、receipt、缓存或逐用户 RPC。该 owner 的最新 union 通过 64 个 selected cases（59 DB/process、5 pure/static），零跳过；精确镜像、Restore、Compose 边界和 legacy baseline 见 [Identity UserBrief ADR](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0129-identity-batched-user-brief-reads.md)。本地资格不代表生产容量、SLO 或完整 Identity。
 
 ---
 

@@ -12,13 +12,15 @@ const base = new URL(inputUrl.endsWith("/") ? inputUrl : `${inputUrl}/`);
 assert(["http:", "https:"].includes(base.protocol), "Preview must use HTTP(S)");
 const routes = [
   "user-guide/",
-  "dev/",
+  "plugins/",
   "api/",
+  "sdk/",
+  "dev/",
   "ops/",
   "user-guide/getting-started",
   "user-guide/workbench/polygon",
   "user-guide/workbench/video-track",
-  "dev/reference/ml-backend-protocol",
+  "plugins/protocols/inference-v2",
   "dev/concepts/overview",
   "ops/runbooks/celery-worker-stuck",
 ];
@@ -89,7 +91,7 @@ try {
     for (const id of baseline[route]) {
       assert(initial.ids.includes(id), `${route}: missing old anchor #${id}`);
     }
-    const hub = routes.indexOf(route) < 4;
+    const hub = routes.indexOf(route) < 6;
     for (const dark of [false, true]) {
       browser("eval", `document.documentElement.classList.toggle('dark', ${dark})`);
       for (const [width, height] of [

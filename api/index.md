@@ -1,19 +1,20 @@
 ---
-title: API 文档
+title: API 与 SDK 文档
 pageClass: docs-hub-page
 aside: false
 audience: [dev]
 type: explanation
 status: stable
-last_reviewed: 2026-10-26
+last_reviewed: 2026-11-27
 ---
 
-# API 文档
+# API 与 SDK 文档
 
-后端基于 FastAPI，遵循 OpenAPI 3.1。先确认 URL、认证和错误格式，再按任务进入指南；需要逐个查看所有路由时，使用下面的交互式参考。
+后端基于 FastAPI，遵循 OpenAPI 3.1；官方同步提供 `yoao-sdk` Python 库、`yoao` CLI 与 TUI（位于 [Platform API SDK](/sdk/)）。先确认 URL、认证和错误格式，再按业务指南或 SDK 开始集成。
 
-<div class="doc-card-grid cols-3">
+<div class="doc-card-grid">
   <DocLinkCard title="认证与第一条请求" desc="获取 Token，配置认证头并开始调用 API" href="/api/guides/auth" />
+  <DocLinkCard title="Platform API SDK 与 CLI" desc="使用 yoao-sdk Python 库、yoao CLI 与 TUI" href="/sdk/" />
   <DocLinkCard title="操作任务与标注" desc="读取任务，写入标注并处理候选结果" href="/api/guides/tasks-and-annotations" />
   <DocLinkCard title="查询异步任务" desc="发起、查询、取消和重试后台作业" href="/api/guides/async-jobs" />
 </div>
@@ -32,7 +33,7 @@ last_reviewed: 2026-10-26
 
 推理插件安装清单的 `managed_model_compatibility[].format` 是必填可空字段：显式 `null` 对应无独立导出格式标识的原生 checkpoint，非空字符串对应具名格式。平台仍同时核对管理员批准、实际能力观测、模型回执和运行设备；缺字段不等同于 `null`，也不能将它当作任意格式匹配。
 
-超管通过 `GET /api/v1/admin/ml-integrations/plugins/installations/{installation_id}/assets` 读取单个安装的资源决策及修订，`PUT` 使用预期修订提交完整替换决策、插件 selection descriptor 和受安装收据约束的实测清单；并发变化返回 `409`。这些操作不更改安装 manifest 或既有资格报告。具体审核与本地测量流程见[插件安装](/user-guide/superadmin/ml-backend-registry#可安装推理插件)。
+超管通过 `GET /api/v1/admin/ml-integrations/plugins/installations/{installation_id}/assets` 读取单个安装的资源决策及修订，`PUT` 使用预期修订提交完整替换决策、插件 selection descriptor 和受安装收据约束的实测清单；并发变化返回 `409`。这些操作不更改安装 manifest 或既有资格报告。具体审核与本地测量流程见[安装推理插件](/plugins/manage/inference-install#可安装推理插件)。
 
 ### 第一次接入
 

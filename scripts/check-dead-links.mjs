@@ -27,6 +27,7 @@ const SKIP_DIRS = new Set([
 
 const SKIP_PATH_PREFIXES = [
   "_yoao-source/",
+  "_sources/",
   "changelog/",
   ".vitepress/cache/",
   ".vitepress/dist/",

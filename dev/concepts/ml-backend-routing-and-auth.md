@@ -52,11 +52,11 @@ flowchart TD
 | `observe` | 仍发给既有默认实例                      | 记录影子选择，不据此阻断既有选择                             |
 | `enforce` | 在合格 active 成员中按平滑加权轮询选择  | 持久准入与单进程 semaphore 共用实例的 `max_concurrency` 上限 |
 
-PostgreSQL 是路由 scope、HTTP attempt、管理占用与连续性记录的权威。Redis 路由数据仅供诊断，清空、超时或租约到期不能证明实际工作结束。三种模式均保留持久执行计数和管理围栏；不能确认 owner 或拓扑时拒绝执行。`enforce` 另校验项目启用、池状态、健康新鲜度、能力指纹、并发容量和熔断状态。这里的 Redis 路由观测与 GPU 仲裁的逐卡账本不同。见 [ADR-0155](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0155-durable-inference-routing-authority.md)。
+PostgreSQL 是路由 scope、HTTP attempt、管理占用与连续性记录的权威。Redis 路由数据仅供诊断，清空、超时或租约到期不能证明实际工作结束。三种模式均保留持久执行计数和管理围栏；不能确认 owner 或拓扑时拒绝执行。`enforce` 另校验项目启用、池状态、健康新鲜度、能力指纹、并发容量和熔断状态。这里的 Redis 路由观测与 GPU 仲裁的逐卡账本不同。见 [ADR-0155](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0155-durable-inference-routing-authority.md)。
 
 成员的 `active` 表示可接新流量，`draining` 表示停止接受新 route lease 并等待已有请求结束，`disabled` 表示不可参与选择。停流只在路由 `enforce` 下真正约束新请求；它不会自行卸载 GPU 模型。GPU 仲裁另有自己的 effective mode，负责资源准入、驱逐和驻留证明。
 
-管理员卸载／重载、移除成员或删除实例须验证精确停流、持久账本、后端连续性及控制状态；未决工作保持阻塞。GPU 自动驻留驱逐使用独立 GPU 授权和执行 scope，不要求先手动停流服务池。Provider 的定向退役 wire 见[后端执行范围的定向退役](../reference/ml-backend-protocol#后端执行范围的定向退役)。
+管理员卸载／重载、移除成员或删除实例须验证精确停流、持久账本、后端连续性及控制状态；未决工作保持阻塞。GPU 自动驻留驱逐使用独立 GPU 授权和执行 scope，不要求先手动停流服务池。Provider 的定向退役 wire 见[后端执行范围的定向退役](/plugins/protocols/inference-v2#后端执行范围的定向退役)。
 
 受控训练模型还会固定完成部署检查的确切实例。平台不会因为该实例不可用，就把相同请求交给池内另一个尚未安装该权重的实例，也不会替换成基础模型继续执行。
 
@@ -74,7 +74,7 @@ GPU 冷启动或驱逐可能在模型请求发送前刷新目标实例的健康�
 
 冷准入使用新 challenge 核对实际驻留。预算不足时先驱逐同一资源上有合格证明且无 lease 的空闲模型，使用稳定优先级和 LRU，保留冷却时间。受签 DRAIN、空闲证明、受签 UNLOAD 和全空证明全部成立后才减账。空闲项不足才排空 busy victim；平台 lease 与后端活动数都归零才能卸载。取消与卸载在同一逐卡 owner 中互斥，超时先记录取消意图，结合 ACK 和新鲜健康证据恢复，不能确认则保持 `Unknown`。
 
-等待受 admission deadline 和票据期限约束，不自动续期。冻结标记不会随 owner TTL 消失，只能由匹配的终态或 challenge-bound reset 清除。旧式卸载、非法授权、损坏账本或未知证明都不能放行。签名、回包和提供方设备要求见[受管 GPU 生命周期](../reference/ml-backend-protocol#_1-3-受管-gpu-生命周期-能力协商)。真实设备部署用[逐资源验收](/ops/runbooks/gpu-arbitration-acceptance)，不能用 CPU 样例或历史验证代替。
+等待受 admission deadline 和票据期限约束，不自动续期。冻结标记不会随 owner TTL 消失，只能由匹配的终态或 challenge-bound reset 清除。旧式卸载、非法授权、损坏账本或未知证明都不能放行。签名、回包和提供方设备要求见[受管 GPU 生命周期](/plugins/protocols/inference-v2#_1-3-受管-gpu-生命周期-能力协商)。真实设备部署用[逐资源验收](/ops/runbooks/gpu-arbitration-acceptance)，不能用 CPU 样例或历史验证代替。
 
 ## 可安装插件的身份与退出
 
@@ -197,4 +197,4 @@ API 启动时只为当前配置的可信 provider 创建或复用私有文件；
 | 「加载模型并试用」不可用     | 某个前置条件尚未通过               | 按页面原因检查项目启用、认证、健康与训练结果资格   |
 | 认证保存返回并发冲突         | 实例在验证期间发生变化             | 刷新并核对最新配置，不覆盖其他管理员的修改         |
 
-实现入口为 `apps/api/app/services/managed_inference_auth.py`、`apps/api/app/services/ml_client.py` 和 `apps/api/app/services/ml_routing/`。Backend 入口认证由共享运行时 `yoao_backend_runtime.backend_auth` 负责。协议字段见 [ML Backend 协议](../reference/ml-backend-protocol)，服务池决策与 GPU 仲裁分别见 [ADR-0050](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/archive/0050-ml-backend-service-pools-and-request-routing.md) 和 [GPU 仲裁验收](../../ops/runbooks/gpu-arbitration-acceptance)。
+实现入口为 `apps/api/app/services/managed_inference_auth.py`、`apps/api/app/services/ml_client.py` 和 `apps/api/app/services/ml_routing/`。Backend 入口认证由共享运行时 `yoao_backend_runtime.backend_auth` 负责。协议字段见 [Inference Protocol v2](/plugins/protocols/inference-v2)，服务池决策与 GPU 仲裁分别见 [ADR-0050](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/archive/0050-ml-backend-service-pools-and-request-routing.md) 和 [GPU 仲裁验收](../../ops/runbooks/gpu-arbitration-acceptance)。

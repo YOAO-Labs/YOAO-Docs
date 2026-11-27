@@ -1,14 +1,15 @@
 ---
 title: 开发自定义训练器插件
+description: 使用 yoao-plugin-sdk 编写、校验并打包符合 yoao-extension-manifest/v1 与 yoao-trainer/v1 的独立训练器插件
 audience: [dev]
 type: how-to
 status: stable
-last_reviewed: 2026-11-26
+last_reviewed: 2026-11-27
 ---
 
 # 开发自定义训练器插件
 
-本文说明如何使用 `yoao-plugin-sdk` 编写、校验并打包符合 `yoao-extension-manifest/v1` 与 `yoao-trainer/v1` 的独立训练器插件。整体架构与平台门禁见[在线学习与训练体系](../concepts/training-datasets)，两个官方参考实现见[Ultralytics 训练器插件](/user-guide/online-learning/ultralytics)与[LibreYOLO 训练器插件](/user-guide/online-learning/libreyolo)。
+本文说明如何使用 `yoao-plugin-sdk` 编写、校验并打包符合 `yoao-extension-manifest/v1` 与 `yoao-trainer/v1` 的独立训练器插件。整体架构与平台门禁见[在线学习与训练体系](/dev/concepts/training-datasets)，两个官方参考实现见[Ultralytics 训练器插件](../official/trainer/ultralytics)与[LibreYOLO 训练器插件](../official/trainer/libreyolo)。
 
 ## 1. 环境准备与依赖边界
 
@@ -64,4 +65,4 @@ yoao-plugin trainer check \
   --skip-train
 ```
 
-容器打包与平台上线时，确保镜像声明与 `manifest.json` 字节一致的 `LABEL io.yoao.plugin.manifest='...'`、以非 root 用户运行（例如 `USER 10001:10001`）、在 `--network=none` 只读挂载环境下完成训练，并由超级管理员在平台核验不可变镜像摘要与隔离冒烟报告后再启用。
+容器打包与平台上线时，确保镜像声明与 `manifest.json` 字节一致的 `LABEL io.yoao.plugin.manifest='...'`、以非 root 用户运行（例如 `USER 10001:10001`）、在 `--network=none` 只读挂载环境下完成训练，并由超级管理员在平台核验不可变镜像摘要与隔离冒烟报告后再注册启用（参见[注册与启用训练器插件](../manage/trainer-install)）。

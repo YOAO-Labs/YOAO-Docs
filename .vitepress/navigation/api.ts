@@ -1,4 +1,5 @@
 import type { DefaultTheme } from "vitepress";
+import { sdkSidebarGroup } from "./sdk";
 
 export const apiSidebar: DefaultTheme.SidebarItem[] = [
   {
@@ -64,3 +65,5 @@ export const apiSidebar: DefaultTheme.SidebarItem[] = [
     items: [{ text: "全部路由索引", link: "/api/guides/_routes.generated" }],
   },
 ];
+
+export const apiAndSdkSidebar: DefaultTheme.SidebarItem[] = [...apiSidebar, sdkSidebarGroup];

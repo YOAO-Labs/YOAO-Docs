@@ -227,10 +227,10 @@ curl -X POST -H "Authorization: Bearer $TOKEN" \
 - [预标注流水线](../../dev/concepts/prediction-pipeline)
 - [Runbook：Celery Worker 卡死](../../ops/runbooks/celery-worker-stuck)
 - [Runbook：ML Backend 不可用](../../ops/runbooks/ml-backend-down)
-- [ROADMAP §1.7 async_jobs MVP](https://github.com/YOAO-Labs/YOAO/blob/main/ROADMAP/2026-05-18-cvat-labelstudio-inspiration.md)
-- 模型：[`apps/api/app/db/models/async_job.py`](https://github.com/YOAO-Labs/YOAO/blob/main/apps/api/app/db/models/async_job.py)
-- service：[`apps/api/app/services/async_job.py`](https://github.com/YOAO-Labs/YOAO/blob/main/apps/api/app/services/async_job.py)
-- 前端铃铛：[`apps/web/src/components/shell/JobsBell.tsx`](https://github.com/YOAO-Labs/YOAO/blob/main/apps/web/src/components/shell/JobsBell.tsx)
+- [ROADMAP §1.7 async_jobs MVP](https://github.com/YOAO-Labs/YOAO/blob/dev/ROADMAP/2026-05-18-cvat-labelstudio-inspiration.md)
+- 模型：[`apps/api/app/db/models/async_job.py`](https://github.com/YOAO-Labs/YOAO/blob/dev/apps/api/app/db/models/async_job.py)
+- service：[`apps/api/app/services/async_job.py`](https://github.com/YOAO-Labs/YOAO/blob/dev/apps/api/app/services/async_job.py)
+- 前端铃铛：[`apps/web/src/components/shell/JobsBell.tsx`](https://github.com/YOAO-Labs/YOAO/blob/dev/apps/web/src/components/shell/JobsBell.tsx)
 
 ## 目录观测扫描任务
 

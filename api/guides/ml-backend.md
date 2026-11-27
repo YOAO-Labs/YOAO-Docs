@@ -41,9 +41,9 @@ POST /api/v1/admin/ml-integrations/plugins/installations/:installation_id/cancel
 
 ORT CUDA 报告另含 `deployment.pool_topology.session_counts` 及每轮 `session_observations`。平台将每个实际 session 的 provider 链和数量与 factory 拓扑、`setup.runtime_info.ort_session_counts`、挑战绑定的 `health.ort_session_counts` 核对；不能用可用 provider 列表替代实际 session，也不能两轮漏掉同一 session。严格 CUDA 拒绝整 session CPU 回退，仍允许合法算子分区。非 ORT 报告不新增这些字段或改写旧摘要。
 
-API SDK 的插件管理类型直接消费 `yoao_inference_contract.plugin`；管理员安装使用 `yoao-sdk[plugins]`，核心 SDK 不引入插件服务或模型运行时。旧持久清单通过管理员 inventory 和显式本地收据迁移补齐，不按插件名猜默认能力；升级限制见[历史清单与本地收据迁移](/user-guide/superadmin/ml-backend-registry#历史清单与本地收据迁移)。
+API SDK 的插件管理类型直接消费 `yoao_inference_contract.plugin`；管理员安装使用 `yoao-sdk[plugins]`，核心 SDK 不引入插件服务或模型运行时。旧持久清单通过管理员 inventory 和显式本地收据迁移补齐，不按插件名猜默认能力；升级限制见[历史清单与本地收据迁移](/plugins/manage/legacy-migration#历史清单与本地收据迁移)。
 
-`disable` 关闭准入不代表 `safe_to_stop`；须完成 quiesce 并使用对应证明修订后才可停止容器或退役。未知状态和通信失败不构成证明。`yoao plugins disable`／`uninstall` 编排这些门禁；`upgrade` 使用新安装及 Registry 身份，不替换旧身份。配置、报告与命令见[超管插件安装](/user-guide/superadmin/ml-backend-registry#可安装推理插件)。
+`disable` 关闭准入不代表 `safe_to_stop`；须完成 quiesce 并使用对应证明修订后才可停止容器或退役。未知状态和通信失败不构成证明。`yoao plugins disable`／`uninstall` 编排这些门禁；`upgrade` 使用新安装及 Registry 身份，不替换旧身份。配置、报告与命令见[安装推理插件](/plugins/manage/inference-install#可安装推理插件)。
 `quiesce` 返回经过排空证明绑定的完整 `launch`（含容器 ID），仅授权停止该实例；同名替代容器不能继承证明。CPU 证明须完整匹配 manifest 声明的排序池集合，且不携带 GPU generation／control epoch；未知、重复或缺失池不能授权停止。独立 Inference owner 只在既有 unload 控制范围内授权精确的 `POST /lifecycle/terminal-drain`，需要前向迁移 `bo0402`，不放开任意管理路径。`cancel-prepared` 仅取消无启动历史且无活动发布或冻结执行引用的预留，使用修订 CAS 和 GPU 持久状态检查；调用方须另外确认本地没有容器，Registry 不观察 Docker。
 
 ## 注册请求
@@ -67,7 +67,7 @@ POST /api/v1/admin/ml-integrations/registry
 
 `gpu_resource_id` 与 `vram_budget_mb` 必须同时填写或同时为 `null`。`type`、默认 prompt、默认阈值和 `api_key` 不是注册字段；backend 类型及推理参数由 `/setup` 自描述，Bearer 凭据使用 `auth_method="token"` + `auth_token`。
 
-URL 校验拒绝 host 精确为 `localhost / 127.0.0.1 / 0.0.0.0 / ::1`（[ADR 0015](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/archive/0015-ml-backend-url-validation.md)）。失败返回 422，并提示改用 Docker service DNS、bridge IP 或可路由域名。
+URL 校验拒绝 host 精确为 `localhost / 127.0.0.1 / 0.0.0.0 / ::1`（[ADR 0015](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/archive/0015-ml-backend-url-validation.md)）。失败返回 422，并提示改用 Docker service DNS、bridge IP 或可路由域名。
 
 ## 修改 / 删除
 
@@ -162,7 +162,7 @@ ML Backend 必须实现：
 | 端点            | 用途                                                                           |
 | --------------- | ------------------------------------------------------------------------------ |
 | `GET /health`   | 健康检查                                                                       |
-| `POST /predict` | 推理（请求/响应见 [ML Backend 协议](../../dev/reference/ml-backend-protocol)） |
+| `POST /predict` | 推理（请求/响应见 [Inference Protocol v2](/plugins/protocols/inference-v2)） |
 
 参考实现：`examples/ml-backend/echo-ml-backend/`。
 
@@ -181,7 +181,7 @@ POST /api/v1/projects/:id/ml-backends/:bid/capabilities/refresh
 - `/setup` 与 capabilities 允许能看见该项目的项目管理员、超级管理员、审核员、标注员读取；`refresh` 只允许项目 owner / 超级管理员。backend `/setup` 不可达时返回 502。
 - 能力快照同时落库到 `ml_backend_registry.health_meta["capabilities"]`（健康检查时写入），无独立迁移。
 
-字段语义与受控词表见 [ML Backend 协议 §4.1](../../dev/reference/ml-backend-protocol)。
+字段语义与受控词表见 [Inference Protocol v2 §4.1](/plugins/protocols/inference-v2)。
 
 ### 项目能力快照
 
@@ -234,7 +234,7 @@ POST /api/v1/projects/:id/ml-backends/:bid/capabilities/refresh
 
 ### 协议能力目录端点
 
-[ADR-0037](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/archive/0037-protocol-capability-catalog-decoupling.md)将平台支持的词表与已注册 Backend 解耦。`GET /api/v1/ml-capabilities/protocol` 不依赖实例注册。
+[ADR-0037](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/archive/0037-protocol-capability-catalog-decoupling.md)将平台支持的词表与已注册 Backend 解耦。`GET /api/v1/ml-capabilities/protocol` 不依赖实例注册。
 
 - **数据源**：`apps/inference/src/yoao_inference/capability_registry.py`，与 `yoao_inference.capabilities` 的受控词表同源（归一化层显式消费同一词表）。
 - **鉴权**：登录用户即可访问；不暴露任何 backend 实例信息，无需 super_admin。

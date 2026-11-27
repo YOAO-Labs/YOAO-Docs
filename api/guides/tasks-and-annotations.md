@@ -11,7 +11,7 @@ last_reviewed: 2026-10-24
 
 任务文件使用 `POST /files/upload-init` 创建 uploading 占位并取得 PUT URL，上传字节后明确调用 `POST /files/upload-complete/{task_id}`。初始化和完成在存储签名／验证或排队前要求项目负责人或超级管理员。读取托管原件时，先按任务当前可见性请求原件身份，再使用认证下载接口；旧 `/file-url` 入口返回 `409 original_requires_authenticated_download`。`POST /files/projects/{project_id}/backfill-thumbnails` 要求项目管理权限并接受持久图像作业。上传完成或作业受理回执不代表缩略图已生成。
 
-`GET /scenes?dataset_id=...`、`GET /scenes/{scene_id}` 和 `GET /scenes/{scene_id}/trajectory` 沿用全局数据集目录读取策略，API key 需 `datasets:read`。`PATCH /scenes/{scene_id}` 沿用数据集管理员写策略，限 project_admin/super_admin；显式 null 当前不修改字段，空 source_metadata 对象可清空元数据，没有 revision/CAS。SDK 与 CLI 分步用法见 [文件上传与数据集场景](../../dev/sdk/files-and-scenes)。
+`GET /scenes?dataset_id=...`、`GET /scenes/{scene_id}` 和 `GET /scenes/{scene_id}/trajectory` 沿用全局数据集目录读取策略，API key 需 `datasets:read`。`PATCH /scenes/{scene_id}` 沿用数据集管理员写策略，限 project_admin/super_admin；显式 null 当前不修改字段，空 source_metadata 对象可清空元数据，没有 revision/CAS。SDK 与 CLI 分步用法见 [文件上传与数据集场景](/sdk/files-and-scenes)。
 
 ## 任务模型
 
@@ -532,7 +532,7 @@ annotation 变更、内容关联、操作账本、lineage、任务统计和聚�
 
 两个接口均要求当前任务可见、可编辑且任务锁允许写入，以及 `annotations:write` scope。相同 actor / task / key 同参回放首次响应，异参返回 `409 idempotency_conflict`。同一次超时重试复用原 key；下一次 undo / redo 必须使用新 key。对象版本变化、锁定或活动子对象分别返回 `409 version_mismatch / annotation_locked / active_children`，非法切线返回 `422 invalid_cut`。原切割提交后 30 天返回 `410 restore_expired`，撤销与重做不续期。
 
-每次提交或恢复都在单一事务内写入对象、统计、操作账本、lineage 与审计；任一失败不产生部分结果。Python SDK 将两个工作台内部接口明确列为 excluded，尚未提供对应客户端方法。实现与回滚约束见 [ADR-0074](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/archive/0074-atomic-annotation-slice-restore.md)。
+每次提交或恢复都在单一事务内写入对象、统计、操作账本、lineage 与审计；任一失败不产生部分结果。Python SDK 将两个工作台内部接口明确列为 excluded，尚未提供对应客户端方法。实现与回滚约束见 [ADR-0074](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/archive/0074-atomic-annotation-slice-restore.md)。
 
 ## 标注转换计划
 
@@ -690,7 +690,7 @@ GET /api/v1/tasks/:id/comments         # 标注评论
 
 标注级历史使用 `GET /api/v1/annotations/{annotation_id}/history`。两类历史均按实际任务的项目、批次与分派规则鉴权，最新记录在前，软删除记录仍需相同可见权限。annotation 冗余 project_id 不作为授权依据。
 
-Mask 格式导出预检 `POST /api/v1/projects/{project_id}/mask-formats/exports:preflight` 同样要求 `export.annotations`；计划摘要不绑定之后的项目导出。点云质量 run 派发失败时，503 detail 保留已持久化的 `run_id` 和 `async_job_id`，可分别读取领域 run 与 Job。SDK 的讨论、格式、质量与修复工作流见 [讨论、缺陷报告与质量处理](../../dev/sdk/annotation-quality)。
+Mask 格式导出预检 `POST /api/v1/projects/{project_id}/mask-formats/exports:preflight` 同样要求 `export.annotations`；计划摘要不绑定之后的项目导出。点云质量 run 派发失败时，503 detail 保留已持久化的 `run_id` 和 `async_job_id`，可分别读取领域 run 与 Job。SDK 的讨论、格式、质量与修复工作流见 [讨论、缺陷报告与质量处理](/sdk/annotation-quality)。
 
 ## 任务锁
 
@@ -699,7 +699,7 @@ Mask 格式导出预检 `POST /api/v1/projects/{project_id}/mask-formats/exports
 | `POST /tasks/:id/lock`   | 显式续锁 |
 | `DELETE /tasks/:id/lock` | 主动释放 |
 
-锁过期后由后台清理任务自动归还。详见 [ADR 0005](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/archive/0005-task-lock-and-review-matrix.md)。
+锁过期后由后台清理任务自动归还。详见 [ADR 0005](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/archive/0005-task-lock-and-review-matrix.md)。
 
 ## 图片金字塔
 
@@ -716,4 +716,4 @@ Task／Dataset／Dashboard 的金字塔缩略图也只沿用 active 输出的保
 - [审核](./predictions)
 - [WebSocket 协作](../../dev/reference/ws-protocol)
 
-任务预测读取要求 API key 的 `annotations:read`；采纳会验证 prediction 属于路径 task。跨帧延续／插值同时校验源任务可编辑，completed 源任务返回 task_locked。相机成员查询验证 SceneTrack 与任务实际 scene 相同；不可见时间线帧不返回轨迹存在信息。完整 SDK 工作流见 [任务上下文、租约与几何工作流](../../dev/sdk/task-workflows)。
+任务预测读取要求 API key 的 `annotations:read`；采纳会验证 prediction 属于路径 task。跨帧延续／插值同时校验源任务可编辑，completed 源任务返回 task_locked。相机成员查询验证 SceneTrack 与任务实际 scene 相同；不可见时间线帧不返回轨迹存在信息。完整 SDK 工作流见 [任务上下文、租约与几何工作流](/sdk/task-workflows)。

@@ -167,5 +167,5 @@ Celery 内置默认队列名为 `celery`，不在任何 Worker 的 `-Q` 列表�
 - [本地开发](../tutorials/local-dev) · 宿主机 API / Web 与容器基础设施联调指南
 - [部署拓扑](./deployment-topology) · 单机、计算分离、局域网生产与训练节点拓扑
 - [运行环境形态](./runtime-environments) · `development` / `staging` / `production` 行为差异
-- [ML Backend 协议](../reference/ml-backend-protocol) · 推理后端与受控模型热加载协议
+- [Inference Protocol v2](/plugins/protocols/inference-v2) · 推理后端与受控模型热加载协议
 - [Docker rebuild vs restart](../troubleshooting/docker-rebuild-vs-restart) · 代码与依赖变更后的刷新策略

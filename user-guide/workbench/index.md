@@ -212,7 +212,7 @@ last_reviewed: 2026-10-26
 
 ## 完整快捷键
 
-> 真值来源：`apps/web/src/pages/Workbench/state/hotkeys.ts`。下表由 `docs-site/scripts/generate-hotkeys.mjs` 在每次 docs build 前自动重生成。面板中的「固定」条目由对应功能直接监听，展示以实际监听方为准；可编辑命令以面板内显示的生效组合为准。
+> 真值来源：`YOAO` 仓库的 `apps/web/src/pages/Workbench/state/hotkeys.ts`。下表由 `scripts/generate-hotkeys.mjs` 生成。面板中的「固定」条目由对应功能直接监听，展示以实际监听方为准；可编辑命令以面板内显示的生效组合为准。
 
 在工作台内按 `?` 随时打开「快捷键」面板：左侧按用途分类（常用、绘制与工具、选择与编辑、画布与视角、AI 与审核、播放与轨迹、任务与系统、鼠标操作），顶部可搜索动作 / 按键 / 生效条件，并在「当前工作台」与「全部类型」之间切换。可编辑命令支持改绑、备用组合、停用与恢复默认，冲突会被拦截并说明原因：
 

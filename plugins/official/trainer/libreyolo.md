@@ -3,7 +3,7 @@ title: LibreYOLO 训练器插件
 audience: [project_admin, super_admin]
 type: reference
 status: stable
-last_reviewed: 2026-11-26
+last_reviewed: 2026-11-27
 ---
 
 # LibreYOLO 训练器插件
@@ -58,7 +58,7 @@ LibreYOLO 训练器以独立插件镜像维护于官方插件仓库 `YOAO-Labs/Y
 | 训练集逐轮 PR／mAP      | 没有本适配器对应的平台选项     | 不提供 `evaluate_train`，不能借用 Ultralytics 配置             |
 | 预检与创建请求标识      | 平台预检、重复请求确认         | 界面生成，不传入原生训练                                       |
 
-旧六参数实验仍沿用其冻结配置，新建完整配置支持更多受控原生参数。配置使用方式见[训练配置与复用](./configuration)。
+旧六参数实验仍沿用其冻结配置，新建完整配置支持更多受控原生参数。配置使用方式见[训练配置与复用](/user-guide/online-learning/configuration)。
 
 ## 完整参数对照表
 
@@ -207,7 +207,7 @@ LibreYOLO 训练器以独立插件镜像维护于官方插件仓库 `YOAO-Labs/Y
 
 断点续训要求当前实验的完整检查点，核对原生任务、模型家族、类别顺序、优化器、随机状态及历史最佳权重。缺失或不匹配的状态会明确失败；不把最后权重冒充最佳权重，也不承诺恢复后与连续训练逐位一致。
 
-YOLO9 t/s/m/c 回流时再次核对格式、原始类别与权重字节。独立插件的 CUDA 配置固定 LibreYOLO 1.6.0、PyTorch `2.14.1+cu132`、torchvision `0.29.1+cu132` 和 CUDA 13.2，使用 FP32 并关闭 half、AMP、TF32；显式 CPU 开发或历史配置不是 GPU 失败时的回退。实际运行时及资格独立固定，不修改原始训练收据。负责人仍须完成类别绑定、固定样本试用，并明确发布默认预标选择。YOLO9 e 以及其他家族未开放回流，见[模型回流](./models)。
+YOLO9 t/s/m/c 回流时再次核对格式、原始类别与权重字节。独立插件的 CUDA 配置固定 LibreYOLO 1.6.0、PyTorch `2.14.1+cu132`、torchvision `0.29.1+cu132` 和 CUDA 13.2，使用 FP32 并关闭 half、AMP、TF32；显式 CPU 开发或历史配置不是 GPU 失败时的回退。实际运行时及资格独立固定，不修改原始训练收据。负责人仍须完成类别绑定、固定样本试用，并明确发布默认预标选择。YOLO9 e 以及其他家族未开放回流，见[模型回流](/user-guide/online-learning/models)。
 
 ## 目前的局限性
 
@@ -215,7 +215,7 @@ YOLO9 t/s/m/c 回流时再次核对格式、原始类别与权重字节。独立
 - 新实验暂不开放项目候选初始化、从零训练、任意权重上传、LoRA、层冻结、蒸馏、CUDA Graph、编译或外部实验跟踪器注入。
 - 训练固定使用单张 GPU，AMP、同步 BN、缓存与下载脚本均关闭，未开放 DDP、自动批大小或 CPU 训练。执行器另固定 CPU 线程，显存不足不会自动改小参数。
 - 原生增强预览、共享逐样本评估和主动选样尚未开放；已有原生试用与默认预标流程可以继续使用。
-- 缺少常规 Precision／Recall、训练集表现和分类别报告时保持缺失；跨框架不能直接对比分数。训练参数表与[逐样本固定阈值评估](./sample-evaluation)的设置用途不同。
+- 缺少常规 Precision／Recall、训练集表现和分类别报告时保持缺失；跨框架不能直接对比分数。训练参数表与[逐样本固定阈值评估](/user-guide/online-learning/sample-evaluation)的设置用途不同。
 - YOLO9 e 不支持原生执行，历史记录与产物仍可读取、下载；回流限 t/s/m/c。训练产物不自动安装或激活插件、启用项目或改变默认预标模型。
 
-需要实例分割或逐轮训练集表现时，查看 [Ultralytics 训练容器](./ultralytics)的对应能力与参数。
+需要实例分割或逐轮训练集表现时，查看 [Ultralytics 训练器插件](./ultralytics)的对应能力与参数。

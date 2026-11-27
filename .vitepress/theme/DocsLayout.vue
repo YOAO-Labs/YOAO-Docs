@@ -7,11 +7,12 @@ const { page, frontmatter } = useData();
 const { Layout } = DefaultTheme;
 const domains: Record<string, string> = {
   "user-guide": "使用指南",
-  dev: "开发文档",
-  api: "API 文档",
+  plugins: "插件生态",
+  api: "API 与 SDK",
+  sdk: "API 与 SDK",
+  dev: "核心开发",
   ops: "部署运维",
   changelog: "更新日志",
-  roadmap: "路线图",
 };
 const types: Record<string, string> = {
   tutorial: "入门教程",

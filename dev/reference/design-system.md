@@ -223,4 +223,4 @@ pnpm --filter web lint
 | 标题与正文 | 本地衬线 `H1`（桌面 `40px` / 移动 `32px`）；无衬线 `H2`/`H3`（`26px`/`20px`）；正文 `16px/1.8` |
 | 表面与圆角 | 扁平阅读画布；选中态使用 `--docs-radius-sm: 4px`，卡片/媒体/代码块使用 `--docs-radius: 8px`    |
 
-顶部菜单与桌面侧边栏在 `960px` 断点启用，右侧目录大纲在 `1280px` 断点启用。修改阅读层 CSS 后，请使用 `docs-site/scripts/check-reading-layout.mjs` 捕获并校验历史锚点、正文计算宽度及亮/暗主题表现（详见[编写与维护文档](../how-to/write-documentation)）。
+顶部菜单与桌面侧边栏在 `960px` 断点启用，右侧目录大纲在 `1280px` 断点启用。修改阅读层 CSS 后，请使用 `scripts/check-reading-layout.mjs` 捕获并校验历史锚点、正文计算宽度及亮/暗主题表现（详见[编写与维护文档](../how-to/write-documentation)）。

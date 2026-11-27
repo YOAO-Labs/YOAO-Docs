@@ -125,7 +125,7 @@ pnpm codegen
 grep -A 5 "logout" apps/web/src/api/generated/sdk.gen.ts | head
 ```
 
-公开 API 有变化时生成并提交受影响 snapshot/类型；只有内部所有者或导入路径改变且精确合同不变时，不制造无关生成文件变更。CI 会执行 `pnpm openapi:check` 与 `pnpm docs:gen`（刷新路由索引 `_routes.generated.md`），因此修改后端接口后必须将更新后的 `apps/api/openapi.snapshot.json`（及受影响的文档产物）一并提交。WebSocket、ML/训练和导出格式等独立合同仍需各自验证，不能用 OpenAPI 通过代替。
+公开 API 有变化时生成并提交受影响 snapshot/类型；只有内部所有者或导入路径改变且精确合同不变时，不制造无关生成文件变更。`YOAO` 侧执行 `pnpm openapi:check`，`YOAO-Docs` 的 sync 流程会运行 `pnpm gen` 刷新路由索引 `api/guides/_routes.generated.md`，因此修改后端接口后必须将更新后的 `apps/api/openapi.snapshot.json` 提交到主仓。WebSocket、ML/训练和导出格式等独立合同仍需各自验证，不能用 OpenAPI 通过代替。
 
 ## 5. 前端 wrapper
 
@@ -151,7 +151,7 @@ export async function logout(): Promise<void> {
 
 要点：
 
-- 优先复用 `generated/sdk.gen` 与 `types.gen` 中的契约定义（参见 [ADR-0003](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/archive/0003-openapi-client-codegen.md) 与 [前后端契约边界](../concepts/api-schema-boundary)）。
+- 优先复用 `generated/sdk.gen` 与 `types.gen` 中的契约定义（参见 [ADR-0003](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/archive/0003-openapi-client-codegen.md) 与 [前后端契约边界](../concepts/api-schema-boundary)）。
 - 业务副作用（清 localStorage、跳页）放 wrapper 里；组件只负责调用。
 
 API 错误必须保留可观察语义。前端不能把锁繁忙、失去权限或陈旧版本当作成功，也不能把收到历史通知视为仍有资源访问权。
@@ -159,7 +159,7 @@ API 错误必须保留可观察语义。前端不能把锁繁忙、失去权限�
 ## 6. PR 检查清单
 
 - [ ] `pnpm openapi:check` 通过（`apps/api/openapi.snapshot.json` 已更新并提交）
-- [ ] `pnpm docs:gen` 已同步刷新 `docs-site/api/guides/_routes.generated.md`
+- [ ] `YOAO-Docs` 中已同步刷新 `api/guides/_routes.generated.md`（本地可用 `YOAO_REPO_PATH=... pnpm gen`）
 - [ ] 后端测试覆盖正常路径 + 至少 1 个错误路径 + 至少 1 个副作用断言
 - [ ] 端点声明了 `status_code` / `summary` / 非默认 `responses`
 - [ ] 关键业务变更写了 `AuditService.log`（如果端点有副作用）

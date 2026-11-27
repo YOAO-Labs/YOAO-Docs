@@ -9,7 +9,7 @@ last_reviewed: 2026-10-27
 
 AI 预标注流水线以 `async_jobs(kind=batch_predict)` 作为用户可见任务真值，以 `predictions` / `failed_predictions` 保存可采纳结果和失败项。本页讲清应用用例、Celery 派发边界、持久化五态、写入时点与下游表的关系。
 
-> 决策依据：[ADR 0014 — Prediction Jobs 历史表](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/archive/0014-prediction-jobs-table.md)
+> 决策依据：[ADR 0014 — Prediction Jobs 历史表](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/archive/0014-prediction-jobs-table.md)
 
 `application/preannotation_contract.py::BatchPredictionRequest` 固定现有任务参数，`preannotation_execution.run_preannotation` 持有业务资源生命周期、Jobs／结果账本和最终写回。模型任务、阶段图、ROI、上下文及结果转换由 `yoao_inference.execution_pipeline`、`execution_context`、`roi` 和 `secondary` 持有，通过同一不可变 `ModelExecutionPort` 执行；调用方不再使用旧模型客户端或直接打开后端凭据。
 
@@ -32,7 +32,7 @@ AAP_FRAME_CELERY_ACCEPTANCE=1 apps/api/.venv/bin/python scripts/verify_module_da
 
 真实 Celery 和 Redis 中的兄弟结果过期、原 ID 延期/重投、协作取消和当前写权限变更均在此入口覆盖。
 
-> 决策依据：[ADR 0014 — Prediction Jobs 历史表](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/archive/0014-prediction-jobs-table.md)
+> 决策依据：[ADR 0014 — Prediction Jobs 历史表](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/archive/0014-prediction-jobs-table.md)
 
 ## 状态机
 
@@ -92,7 +92,7 @@ Assets 的输入租约命令只接受一份责任或一个相对对象键。发�
 
 普通模型可作为源阶段，受控检测模型可作为下游裁剪阶段；执行时分别校验每个受控阶段的冻结引用，不把子阶段身份套用到源阶段。受控引用缺失或失效时在派发前拒绝，实际推理仍按冻结的 Registry 和部署再次核验。
 
-受控引用保留原训练 `framework_version`，并在重新加载试用后独立冻结实际 `inference_runtime`，后者参与引用及评估请求摘要。Backend 的结果必须匹配冻结的推理身份；根预测元数据单独保存该身份，阶段执行记录通过各自引用保留它。旧引用不新增字段或重算摘要，只允许原训练版本推理，不能因容器升级静默更换环境。软件身份与目标 GPU 的生命周期资格分别核验，见[受控模型协议](../reference/ml-backend-protocol#固定样本试用与发布)。
+受控引用保留原训练 `framework_version`，并在重新加载试用后独立冻结实际 `inference_runtime`，后者参与引用及评估请求摘要。Backend 的结果必须匹配冻结的推理身份；根预测元数据单独保存该身份，阶段执行记录通过各自引用保留它。旧引用不新增字段或重算摘要，只允许原训练版本推理，不能因容器升级静默更换环境。软件身份与目标 GPU 的生命周期资格分别核验，见[受控模型协议](/plugins/protocols/inference-v2#固定样本试用与发布)。
 
 初跑与失败重试共用 `_run_task_pipeline`。重试只重跑失败任务的完整原始阶段树，沿用各阶段队列设备和受控部署；不重新解析当前发布。下游失败记录 `partial`、阶段错误和策略允许的候选，完整重试成功后将旧部分候选标为已被替代，保留其来源和人工采纳结果。无快照的历史失败维持旧单阶段重试。
 
@@ -106,7 +106,7 @@ WorkBench 请求要求项目 `annotation.write` 和当前题有效编辑／分�
 
 下游原生掩码仍缺少经过资格核验的像素回映与对象归属合同，不能通过丢 shape 或丢对象降级：运行时在属性合并、geometry 收集及 crop 回映前以 `NativeMaskChildOutputUnsupported` 记录明确阶段失败，按阶段策略保留或丢弃父对象。图片原生候选复用受预算管理的像素层、Worker 和缓存，按 Task/Prediction/原始 shape 下标读取并按真实像素拾取；来源、置信度或审阅状态变化后移除相应可见记录，缓存按预算回收，切题隔离迟到结果。引用后台原生生成使用下述独立资格，普通引用 receipt 继续拒绝原生载荷。
 
-详细决策见 [模型目录与冻结管线](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/archive/0088-model-catalog-and-frozen-pipelines.md)。
+详细决策见 [模型目录与冻结管线](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/archive/0088-model-catalog-and-frozen-pipelines.md)。
 
 ### 引用图片的后台原生结果资格
 
@@ -153,7 +153,7 @@ WorkBench 请求要求项目 `annotation.write` 和当前题有效编辑／分�
 
 `predictions.tool_unit_id String(30)` 是必填字段：
 
-- 写入时由 `PredictionService.apply_prediction_result` 调 [`derive_tool_unit_from_result`](https://github.com/YOAO-Labs/YOAO/blob/main/apps/api/app/services/prediction.py) 按 `result[0].type` 派生:
+- 写入时由 `PredictionService.apply_prediction_result` 调 [`derive_tool_unit_from_result`](https://github.com/YOAO-Labs/YOAO/blob/dev/apps/api/app/services/prediction.py) 按 `result[0].type` 派生:
   - `polygonlabels` / `brushlabels` / `multi_polygon` → `region`
   - `polylinelabels` → `polyline`
   - `rectanglelabels` → `bbox`; 若 `value.rotation` 字段存在 → `rotated_bbox`
@@ -161,7 +161,7 @@ WorkBench 请求要求项目 `annotation.write` 和当前题有效编辑／分�
 - `to_internal_shape()` 出参也带 `tool_unit_id`, 供前端候选层 / 原生 JSON 导出消费
 - `CandidateDecisionPort.accept()` 创建的 annotation 沿用 prediction 的 `tool_unit_id` (与项目 `tool_bindings[unit].classes` 软校验保一致)
 
-详见 [annotation-module · 工具单位](./annotation-module#工具单位-tool-unit-维度) 与 [ADR-0026](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/archive/0026-tool-unit-class-and-attribute-binding.md)。
+详见 [annotation-module · 工具单位](./annotation-module#工具单位-tool-unit-维度) 与 [ADR-0026](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/archive/0026-tool-unit-class-and-attribute-binding.md)。
 
 ## 普通逐题批量的结果恢复
 
@@ -259,7 +259,7 @@ if params:
 
 ## 多阶段预标注（pipeline_stages，路径 B）
 
-`PreannotateRequest.pipeline_stages`（定义于 `apps/inference/src/yoao_inference/preannotate.py`）把单阶段批量预标泛化为**平台层跨 backend 编排**：源阶段（如 detect）产框 → 下游阶段（如 classify / box-seg）对每个父框按各自路由方式投递 → 结果合并回同一框。缺省（无 `pipeline_stages`）与单阶段 `batch_predict` 逐字等价，完全向后兼容。决策与边界见 [ADR 0043 — 多阶段预标注编排](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/archive/0043-staged-preannotation-pipeline.md)。
+`PreannotateRequest.pipeline_stages`（定义于 `apps/inference/src/yoao_inference/preannotate.py`）把单阶段批量预标泛化为**平台层跨 backend 编排**：源阶段（如 detect）产框 → 下游阶段（如 classify / box-seg）对每个父框按各自路由方式投递 → 结果合并回同一框。缺省（无 `pipeline_stages`）与单阶段 `batch_predict` 逐字等价，完全向后兼容。决策与边界见 [ADR 0043 — 多阶段预标注编排](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/archive/0043-staged-preannotation-pipeline.md)。
 
 命名预标编排的保存、读取、apply 与本页描述的执行流水线属于相邻层次：结构仍共用 `yoao_inference.pipeline.validate_saved_pipeline`，便携命令由 `yoao_inference.pipeline_manager.PipelineManager` 持有，API 路由经 `services/inference_pipelines.py` 选择事务或独立 owner。六个公开路由的 DTO 不变；这些命令不会改变本页所述 `PreannotateRequest` 或 worker 执行合同。
 

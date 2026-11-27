@@ -218,7 +218,7 @@ AI 候选列表行右侧有「精修」按钮（仅 polygon 类型候选显示�
 
 ## 多模型选择与兼容性提示
 
-若所绑定 backend 在[能力声明协议 v2](../../dev/reference/ml-backend-protocol) 中暴露**多个 model 条目**，交互工具栏的「模型与参数」会出现「模型」下拉，按 task 中文分组并**按当前工具的 prompt 过滤**——只列声明支持该交互的图像 model(如智能点 → 仅交互式分割 model),过滤后通常剩 1 个则自动隐藏,真正的权重选择交给「档位」选择器(即变体选择器,显示在模型字段下方)。切换后续 AI 请求改用所选 model。
+若所绑定 backend 在[Inference Protocol v2](/plugins/protocols/inference-v2) 中暴露**多个 model 条目**，交互工具栏的「模型与参数」会出现「模型」下拉，按 task 中文分组并**按当前工具的 prompt 过滤**——只列声明支持该交互的图像 model(如智能点 → 仅交互式分割 model),过滤后通常剩 1 个则自动隐藏,真正的权重选择交给「档位」选择器(即变体选择器,显示在模型字段下方)。切换后续 AI 请求改用所选 model。
 
 > 与「变体选择器」的区别：**变体**是同一 model 的不同权重档位（如 SAM2-L / SAM2-B）；**模型**是同一 backend 暴露的不同 model 条目（往往 task 不同）。backend 只有单个 model（含老 backend / 协议 v1）时不渲染模型下拉，行为完全不变。
 

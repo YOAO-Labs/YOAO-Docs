@@ -35,7 +35,7 @@ last_reviewed: 2026-10-19
 
 物理实例保存在 ML Backend registry 中，服务池把能力一致的一个或多个实例组成逻辑计算单元。项目启用的是服务池，请求进入 `MLBackendRouter` 后才会根据健康、能力指纹、熔断、权重和并发上限选出物理实例。
 
-prompt、媒体和 pipeline 参数是推理输入，不是直接选择物理主机的路由键。协议契约见 [ML Backend 协议](../reference/ml-backend-protocol)，服务池语义见 [ADR 0050 — ML Backend 服务池路由](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/archive/0050-ml-backend-service-pools-and-request-routing.md)。
+prompt、媒体和 pipeline 参数是推理输入，不是直接选择物理主机的路由键。协议契约见 [Inference Protocol v2](/plugins/protocols/inference-v2)，服务池语义见 [ADR 0050 — ML Backend 服务池路由](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/archive/0050-ml-backend-service-pools-and-request-routing.md)。
 
 Kubernetes 编排目前不是既定路线；如果 Compose 和服务池已无法满足调度、容错或运维要求，应先新建 ADR 论证迁移边界。
 
@@ -100,5 +100,5 @@ Source 使用专用 PostgreSQL LOGIN 精确执行 42 项 Assets 能力，不直�
 
 - [运行环境形态](./runtime-environments)（同一套代码在开发与生产环境的运行差异）
 - [生产部署](/ops/deploy/docker-compose)（Compose 叠加、反向代理、卷与环境变量）
-- [ADR 0012 — SAM Backend 独立 GPU 服务](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/archive/0012-sam-backend-as-independent-gpu-service.md)
+- [ADR 0012 — SAM Backend 独立 GPU 服务](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/archive/0012-sam-backend-as-independent-gpu-service.md)
 - [容器网络与 loopback 限制](../troubleshooting/container-networking)

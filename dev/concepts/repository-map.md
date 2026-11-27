@@ -8,7 +8,7 @@ last_reviewed: 2026-10-26
 
 # 仓库地图：模块归属与调用链
 
-正常月报由 Python `app/services/audit_summary.py` 本地归并。`apps/audit-summary` 与 `apps/api/experiments` 只保留 Go／HTTP 隔离实验，默认运行、生产部署和普通 CI 不依赖它。语言依据见 [ADR 0090](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0090-module-languages-and-audit-summary-process.md)。
+正常月报由 Python `app/services/audit_summary.py` 本地归并。`apps/audit-summary` 与 `apps/api/experiments` 只保留 Go／HTTP 隔离实验，默认运行、生产部署和普通 CI 不依赖它。语言依据见 [ADR 0090](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0090-module-languages-and-audit-summary-process.md)。
 
 > 本文回答「一个行为改哪里、沿着哪些真实符号走」。只列当前实现与允许依赖方向，
 > 不复制目录树、不复制代码、不维护第二套角色矩阵（角色语义见
@@ -41,7 +41,7 @@ last_reviewed: 2026-10-26
 | 训练执行器      | `apps/training-executor`                                                                    | 独立拉取式执行器，文件锁独占 GPU，管理原生训练子进程与脱敏日志                                             |
 | 素材探测服务    | `apps/media-probe`                                                                          | 独立元数据/帧时间表/packet 探测与 HTTP/NDJSON 合同；不取得数据库或对象存储访问权                           |
 | 事务数据能力    | `apps/api/alembic/sql/0190*` 至 `0217*`                                                     | 授权、建题、删除、解绑、上传、目录、关联读取、空间状态、ZIP/扫描与连接管理；冻结 SQL/JSON 合同及同库事务   |
-| ML backend      | `apps/{grounded-sam2,sam3,yolo,rapidocr,onnxtools}-backend`                                 | 各自的池包装 / 观测 / 生命周期                                                                             |
+| 官方推理插件    | 外部 `YOAO-Plugins/plugins/inference/*`                                                     | 各自独立容器镜像、权重声明与适配包装（[官方插件目录](/plugins/official/)）                                   |
 
 ## 2. 授权真值（唯一来源）
 
@@ -80,24 +80,24 @@ last_reviewed: 2026-10-26
   旧 API lifecycle coordinator 已移除；`services/user_lifecycle.py` 仅保留
   `UserLifecycleService.lock_accounts`，现经 caller-bound Identity account lock adapter 获取只读事实并保留其显式 rollback 语义。Batch handoff/release helpers 已退役，Project owner
   transfer helper 继续供其他 workflows 使用。各命令的权限、回执和事务边界独立维护；offboarding
-  已通过限定的本地资格，精确范围见 [ADR-0128](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0128-independent-identity-offboarding-commands.md)。
+  已通过限定的本地资格，精确范围见 [ADR-0128](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0128-independent-identity-offboarding-commands.md)。
 - Identity 运维账号 provisioning：`services/identity_provisioning_data.py` 把
   `AccountProvisioningData` 绑定到 caller `AsyncSession`；portable manager 只返回 UUID 或
   bootstrap 的 `None`，不把 User ORM/password hash 交给 CLI。Native 负责 per-email
   bootstrap defaults/fixed Audit 与 exact import-admin guard；outer bootstrap/import caller
   保留 commit/rollback。邀请账号仍由 Identity Invitation owner 创建；运维 provisioning
   不复用邀请写入路径。本切片已通过限定本地资格，见
-  [ADR-0132](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0132-identity-operational-provisioning-and-authority-reads.md)。
+  [ADR-0132](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0132-identity-operational-provisioning-and-authority-reads.md)。
 - Identity authority facts 复用：`project_access` 的非锁定账号读取复用现有
   `IdentityAccountLockData.read_actor_status`／`read_actor_facts`；事务写路径复用已有 SHARE、
   UPDATE、KEY SHARE 函数，不新增 SQL 或传输协议。Project/member 刷新及 caller 原错误映射
-  保持不变；详见 [ADR-0132](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0132-identity-operational-provisioning-and-authority-reads.md)。
+  保持不变；详见 [ADR-0132](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0132-identity-operational-provisioning-and-authority-reads.md)。
 - 同事务 Identity 账号锁：`apps/api/app/services/identity_account_lock_data.py` 调用
   `apps/identity/src/yoao_identity/account_lock_contract.py` 定义的 SHARE/UPDATE/KEY SHARE 三项
   Native function；它使用 caller connection 并让锁持续到业务写入提交，只返回 id/name/email/role/is_active
   五字段事实。没有 lock HTTP endpoint、独立 DSN 或 User 原表授权；账号、Project、membership 与资源
   的顺序及各 caller 对 NOWAIT、SQLSTATE、busy 和 rollback 的映射仍由原 workflow 持有。跨帧写入每帧重取
-  facts，非锁定 Workspace 查询和 bootstrap/import User writer 仍待处理；详见 [ADR-0131](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0131-identity-transactional-account-locks.md)。
+  facts，非锁定 Workspace 查询和 bootstrap/import User writer 仍待处理；详见 [ADR-0131](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0131-identity-transactional-account-locks.md)。
 - 批量 UserBrief enrichment：现有 `app/services/user_brief.py::resolve_briefs` 与
   `resolve_briefs_with_project_role` 为已授权的任务／项目／结果补充六字段用户摘要；
   调用者先检查自己的 rows，helper 不接收 actor，也不增加公共资料查询路由。Identity
@@ -105,7 +105,7 @@ last_reviewed: 2026-10-26
   项目成员角色只通过 Workspace 的窄批量 capability 读取。该 owner 已通过 64 个 distinct
   selected cases（59 DB/process、5 pure/static），零跳过；旧行为、caller-transaction 和
   可选 private runtime 边界见
-  [ADR-0129](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0129-identity-batched-user-brief-reads.md)。
+  [ADR-0129](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0129-identity-batched-user-brief-reads.md)。
 - Projects 成员列表 `projects.list_members` 在 Workspace 完成授权并按
   `assigned_at DESC` 选择 membership rows 后，调用全局 `resolve_briefs` 一次补齐用户显示字段。
   Membership role 仍是项目职责，brief role 是平台角色；响应保持原 DTO，空列表不访问 Identity，
@@ -202,7 +202,7 @@ last_reviewed: 2026-10-26
 
 1. 路由进入：`apps/web/src/App.tsx` → 页面路由；项目内入口经
    `RequireProjectAccess` 调 `useProjectAccess` 取得能力集。
-2. 后端鉴权：`app/deps.py::get_current_user` 先由现有 AUTH 完成 JWT/API-key 准入，再用其 actor UUID 和 admitted role 读取 Identity 当前主体上下文；缺失/停用/role drift 保持 401，owner 或响应错误保持 503。随后路由内的 `resolve_project_access()` 独立建立不可变 `ProjectAccess`，不会把 actor-context 当项目能力或写权限票据。该内部读取只替代准入后的 profile hydration，不替代项目/写入围栏，详见 [ADR-0130](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0130-identity-post-admission-actor-context.md)。
+2. 后端鉴权：`app/deps.py::get_current_user` 先由现有 AUTH 完成 JWT/API-key 准入，再用其 actor UUID 和 admitted role 读取 Identity 当前主体上下文；缺失/停用/role drift 保持 401，owner 或响应错误保持 503。随后路由内的 `resolve_project_access()` 独立建立不可变 `ProjectAccess`，不会把 actor-context 当项目能力或写权限票据。该内部读取只替代准入后的 profile hydration，不替代项目/写入围栏，详见 [ADR-0130](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0130-identity-post-admission-actor-context.md)。
 3. 取任务：`app/services/scheduler.py` 派题；任务锁语义在 `app/services/task_lock.py`。
    视频共享上下文和采样在 `app/services/video_context.py`；帧服务负责构建，
    片段、协作、导出、追踪与质检单向依赖该下层所有者。
@@ -360,7 +360,7 @@ last_reviewed: 2026-10-26
 
 ## 公开契约与入口台账
 
-此处是入口覆盖索引，不建立第二套路由、任务注册或数据真值。完整公开操作以 `apps/api/openapi.snapshot.json` 为准；`docs-site/api/guides/_routes.generated.md` 是源码装饰器索引，不能代替运行时注册表。数据写入见[所有权台账](./backend-layers#权威数据与写入所有权)，外部状态见[存储台账](../reference/storage-buckets#对象前缀所有者与删除边界)。
+此处是入口覆盖索引，不建立第二套路由、任务注册或数据真值。完整公开操作以 `apps/api/openapi.snapshot.json` 为准；`YOAO-Docs` 中的 `api/guides/_routes.generated.md` 是源码装饰器索引，不能代替运行时注册表。数据写入见[所有权台账](./backend-layers#权威数据与写入所有权)，外部状态见[存储台账](../reference/storage-buckets#对象前缀所有者与删除边界)。
 
 ### 主 API 的 HTTP 覆盖
 

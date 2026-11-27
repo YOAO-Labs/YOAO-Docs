@@ -44,7 +44,7 @@ SQL 传输对 `change_role` 的 `preview_token` 和 `reason` 使用 `json-string
 
 来自迁移 `bo0467` 之前的数据库仍须满足原 namespace 切换门禁：核对备份、停止旧准入、将旧 `workspace_membership_client` 设为 `NOLOGIN`，并排空可调用 prepare／apply／policy 的连接。迁移拒绝未排空的旧入口、目标 namespace 冲突或未预期函数依赖，不主动停用账号或终止会话，也不提供旧 namespace 别名。wire schema、receipt、operation UUID、GUC 绑定的事务语义及历史 `0253` 工件不变。此历史 schema 门禁不是启用专用 API DSN 的步骤。
 
-成员命令的独立安装包、受限 Native 权限、锁语义、重启重放和备份恢复证据见 [ADR-0133](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0133-workspace-membership-lifecycle-owner.md)。这些历史结果限定原候选和运行拓扑。
+成员命令的独立安装包、受限 Native 权限、锁语义、重启重放和备份恢复证据见 [ADR-0133](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0133-workspace-membership-lifecycle-owner.md)。这些历史结果限定原候选和运行拓扑。
 
 ## 项目负责人转移
 
@@ -58,7 +58,7 @@ Native 先按 UUID 顺序锁当前操作人与接收账号，再取 Project 排�
 
 来自旧 namespace 的数据库仍受既有前向迁移门禁保护：先安排维护窗口、保留恢复点、停止旧写入并排空可调用转移函数的连接，显式关闭旧 `workspace_owner_transfer_client` LOGIN。旧 LOGIN 是集群级身份，须协调共享调用方；迁移不代替操作者停用账号或终止连接。旧 namespace 不留别名，也不改变 wire schema、回执身份或锁语义。
 
-退役前命名试点通过 70 个去重案例：20 项双 namespace 安全识别／授权，50 项负责人转移；另有 34 项单元检查通过。覆盖有数据旧库的前向切换与拒绝路径、四条绑定与旧响应对照、受限 LOGIN、事务失败、丢响应／当前备份恢复，以及 Python／Node 受限镜像重启重放。结果由 66 项未变更的通过证据和四条最终兼容路径复验组成，不代表新装配资格或全部 namespace 切换。验证范围见 [ADR-0134](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0134-workspace-project-owner-transfer.md)。
+退役前命名试点通过 70 个去重案例：20 项双 namespace 安全识别／授权，50 项负责人转移；另有 34 项单元检查通过。覆盖有数据旧库的前向切换与拒绝路径、四条绑定与旧响应对照、受限 LOGIN、事务失败、丢响应／当前备份恢复，以及 Python／Node 受限镜像重启重放。结果由 66 项未变更的通过证据和四条最终兼容路径复验组成，不代表新装配资格或全部 namespace 切换。验证范围见 [ADR-0134](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0134-workspace-project-owner-transfer.md)。
 
 ## 配置命令实现与验收状态
 
@@ -72,7 +72,7 @@ API 借用调用方事务，保留提交与响应。配置使用 API 的 `ML_HEA
 `VIDEO_TRACKER_SAM3_WINDOW_SIZE_FRAMES`；跨 owner 探测使用 Inference 自己的 URL、bearer 和调用期限。
 
 退役前的三条绑定各对照了 106 项原公开响应，独立进程的丢响应重试、重启重放及不可用不回退也通过本地检查。失败事务、备份恢复、9 项关联恢复及 `0257` 完整迁移的证据保留；独立安装包、受限镜像与并发结果不代表当前拓扑已经验收。状态与事务取舍见
-[ADR-0136](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0136-workspace-configuration-command-owner.md)。
+[ADR-0136](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0136-workspace-configuration-command-owner.md)。
 
 ### 类别重命名
 
@@ -84,7 +84,7 @@ API 借用调用方事务，保留提交与响应。配置使用 API 的 `ML_HEA
 同名请求不写业务数据或操作回执，也不检查类别和工具单位是否存在。
 API 在调用方仍持锁时读取投影。改名没有持久成功收据，不会自动重发。
 退役前的三路径、独立安装包、受限镜像、重启、恢复和完整迁移已通过限定本地验收，范围见
-[ADR-0143](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0143-workspace-project-class-rename-owner.md)。
+[ADR-0143](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0143-workspace-project-class-rename-owner.md)。
 
 ## 模板列表、详情与响应投影
 
@@ -102,7 +102,7 @@ API 保留参数与身份准入、写入提交和公开 DTO 校验；读取 owne
 源码、受限数据账号与实际进程验证通过。独立安装包、受限 owner/API 镜像、
 真实容器响应投影、故障恢复、备份恢复与0259完整迁移均已完成限定本地验收；
 16次详情读取在并发4下全部成功，无 OOM，该本地样本不代表生产容量。
-当前范围和信任边界见 [ADR-0137](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0137-workspace-template-query-owner.md)。
+当前范围和信任边界见 [ADR-0137](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0137-workspace-template-query-owner.md)。
 
 ## 项目查询
 
@@ -113,14 +113,14 @@ API 保留参数与身份准入、写入提交和公开 DTO 校验；读取 owne
 有限值超出 Python 范围时同样保留原内部错误，真实无穷值仍按原驱动处理。
 需要显示资料时调用 Identity 的既有批量 UserBrief 适配器；空页、统计和就绪度不访问 Briefs。
 限定本地验收与剩余边界见
-[ADR-0139](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0139-workspace-project-query-owner.md)。
+[ADR-0139](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0139-workspace-project-query-owner.md)。
 
 访问上下文的 `get_project_access` 复用同一个查询 owner，返回原有成员 ID、版本与能力字段。
 第一轮保留初始项目、当前账号、刷新项目和成员读取，第二轮从当前账号开始再查项目与成员；
 最终职责和版本来自同一次成员读取。该操作不需要 Briefs，不增加权限锁或更强事务快照。
 原本地锁定解析器的 I/O 和锁序保留，共享纯权限策略。退役前的三路径响应、受限镜像、重启、
 恢复和完整迁移已通过限定本地验收；历史证据见
-[ADR-0141](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0141-workspace-project-access-query.md)。
+[ADR-0141](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0141-workspace-project-access-query.md)。
 
 供类别／属性统计使用的 `require_project_manager` 复用同一 Project Query owner，
 只执行原来一轮当前权限检查，成功仅返回目标项目 ID。可见的普通成员在完整成员行解码后
@@ -138,7 +138,7 @@ API 随后调用独立 Labeling 统计边界，配置见 [Labeling 运行协议]
 读取保留调用方的 autoflush／`no_autoflush`，不提交或回滚。非空成员列表调用 Identity Briefs；
 提及候选不读取 Briefs，只消费 Identity 的窄账号事实，不获得 User 原表权限。
 包对照角色 `yoao_workspace_directory_query_client` 仍只有 policy 和 step 两项函数权限。
-协议与验证范围见 [ADR-0140](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0140-workspace-directory-query-owner.md)。
+协议与验证范围见 [ADR-0140](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0140-workspace-directory-query-owner.md)。
 
 该目录切片在退役前完成了三路径响应对照、独立安装包、受限镜像、故障重启、备份恢复及完整迁移的限定本地验收。1 CPU／256 MiB 下的 16 次并发读取不代表生产容量；
 API 与数据库不在该容器预算内。完整模块当前状态见[模块台账](/dev/concepts/module-deployment#剩余工作台账)。
@@ -179,7 +179,7 @@ baseline 与候选修订。Native setter 只写精确配置与事务时间戳，
 `infra/docker/workspace-grants.sql`（`-v grant_project_maintenance=1`）获取六项固定业务 owner 执行权，
 没有私表／列、序列、DDL 或 TEMP 权限；PostgreSQL/public invoker helpers 不属于这项
 业务能力计数。先应用当前迁移和 `module-data-grants.sql`，再按专用脚本设置 `expected_database`、`migration_role`、`workspace_owner` 与 `workspace_project_maintenance_role`。严格回复及 Native／Node／
-真实消费者的限定本地证据见 [ADR-0164](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0164-workspace-transactional-project-maintenance.md)。
+真实消费者的限定本地证据见 [ADR-0164](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0164-workspace-transactional-project-maintenance.md)。
 
 开发点云种子还使用 `aap-workspace-seed-project/v1`，仍在同一 SQL Session 内调用：
 
@@ -304,7 +304,7 @@ API 写入权限入口保留原元组接口，通过现有
 
 真实 API LOGIN 在撤销私表 SELECT 后仍可读取权限并保持锁；Node 直接消费同一组
 能力。共享编解码与实际标注／训练等定向结果见
-[ADR-0166](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0166-workspace-locked-authority-snapshots.md)。完整模块凭据与冷工件
+[ADR-0166](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0166-workspace-locked-authority-snapshots.md)。完整模块凭据与冷工件
 仍待集中验收，本项局部资格不替代完整独立部署。
 
 ## 无锁权限与调用方快照
@@ -320,7 +320,7 @@ GET access 的第二轮权威检查保持。应用授权清单补齐既有 Proje
 policy 和 step，不新增角色或服务。
 
 真实受限 API LOGIN、READ ONLY、Node、时序和缓存验收见
-[ADR-0167](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0167-workspace-unlocked-authority-snapshots.md)。本项局部资格仍不
+[ADR-0167](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0167-workspace-unlocked-authority-snapshots.md)。本项局部资格仍不
 替代完整 Workspace 装配与恢复验收。
 
 ## 独占 Project 快照
@@ -334,7 +334,7 @@ Native `lock_project_row(uuid,boolean)` 不承接权限策略；只返回严格�
 此单一函数，没有新增角色、服务、连接或 HTTP 提交边界。
 
 受限真实 API、Node、锁、缓存和隔离级别资格见
-[ADR-0168](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0168-workspace-exclusive-project-snapshots.md)。完整模块装配仍见
+[ADR-0168](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0168-workspace-exclusive-project-snapshots.md)。完整模块装配仍见
 [唯一台账](/dev/concepts/module-deployment#剩余工作台账)。
 
 ## Task／Training 业务快照
@@ -346,7 +346,7 @@ Project 事实读取配置。调用方的缓存命中、autoflush、强制刷新
 训练的前置引用锁仍先持有账号 SHARE，再持有 Project KEY SHARE。原等待函数和
 新增 NOWAIT companion 只返回 UUID／null，不额外解码配置日期，不新开连接或提交。
 应用授权、实际受限 API 和 Node 证据见
-[ADR-0169](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0169-workspace-task-training-project-snapshots.md)。其余消费者和
+[ADR-0169](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0169-workspace-task-training-project-snapshots.md)。其余消费者和
 完整模块资格仍按[唯一台账](/dev/concepts/module-deployment#剩余工作台账)推进。
 
 ## 普通业务项目快照与无 actor 读取
@@ -360,7 +360,7 @@ Project 事实读取配置。调用方的缓存命中、autoflush、强制刷新
 READ ONLY、Node、异常回复回滚和实际后台 relay 已通过限定本地检查。完整缓存
 兼容继续使用已有行解码与会话绑定。安装当前迁移及 owner／应用授权，不新增运行
 进程或凭据。范围见
-[ADR-0171](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0171-workspace-actorless-business-snapshots.md)。其他集合查询及完整模块装配仍按唯一台账推进。
+[ADR-0171](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0171-workspace-actorless-business-snapshots.md)。其他集合查询及完整模块装配仍按唯一台账推进。
 
 ## 排序项目集合锁与计数投影
 
@@ -376,7 +376,7 @@ READ ONLY、Node、异常回复回滚和实际后台 relay 已通过限定本地
 
 两项能力均为固定 search_path 的 SECURITY DEFINER，PUBLIC 无执行权；已有 owner、
 应用与本地 worktree grant 清单同步更新。没有新增连接或自主提交点。范围和受限
-API／Node 验收见 [ADR-0172](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0172-project-set-locks-and-labeling-counters.md)。
+API／Node 验收见 [ADR-0172](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0172-project-set-locks-and-labeling-counters.md)。
 这仍是操作级调用边界，完整模块凭据与运行工件尚未集中验收。
 
 撤回、重开与审核的原子增减分别使用 Labeling 的
@@ -384,7 +384,7 @@ API／Node 验收见 [ADR-0172](https://github.com/YOAO-Labs/YOAO/blob/main/docs
 `record_project_review_approval(uuid)`。它们直接更新数据库当前值，使用正常行锁等待，
 保持原 autoflush、计数缓存和 Task／Audit 外层事务；不通过绝对补丁覆盖旧快照。
 受限 API 撤销 Project 私表 SELECT／UPDATE 后，四条实际 HTTP 流程及 Node 调用通过，
-范围见 [ADR-0176](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0176-labeling-lifecycle-counter-deltas.md)。
+范围见 [ADR-0176](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0176-labeling-lifecycle-counter-deltas.md)。
 
 ## 数据集解绑的调用方事务
 
@@ -397,7 +397,7 @@ Session 执行既有 Native 函数。独立调用方可用
 绑定不打开、结束或重试事务。预览不删除业务数据，但会锁定当前权限；两项能力都
 不能使用 READ ONLY 事务。原关联代次、保留检查、原子清理／审计／回执、缓存和
 公开幂等行为保持。完整字段与作用域见[数据能力协议](./module-data#workspace-数据集解绑与清理回执)
-和 [ADR-0177](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0177-workspace-caller-transaction-dataset-unlink.md)。
+和 [ADR-0177](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0177-workspace-caller-transaction-dataset-unlink.md)。
 
 本地资格覆盖调用边界及[视频退役门禁](./module-data#视频退役与删除围栏)。未退役时
 返回 video_execution_not_retired 409，锁竞争沿用 project_busy；两者均保留原事务。
@@ -416,7 +416,7 @@ Session 执行既有 Native 函数。独立调用方可用
 转换为可写实体或额外加载时间字段。API 在项目、成员和用户私表 SELECT 被拒绝时
 可完成这些选定读取，认证与姓名资料仍走各自 Identity owner。
 
-范围见 [ADR-0173](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0173-workspace-actor-scope-relations.md)。非锁定成员集合使用下述
+范围见 [ADR-0173](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0173-workspace-actor-scope-relations.md)。非锁定成员集合使用下述
 成员事实关系；Project 集合／标量见下文原生项目事实。完整模块
 凭据、冷工件与恢复继续按[唯一台账](/dev/concepts/module-deployment#剩余工作台账)集中验收。
 
@@ -436,7 +436,7 @@ Session 执行既有 Native 函数。独立调用方可用
 受限 API LOGIN 在成员私表 SELECT 被撤销后完成选定 SQL 与真实 HTTP 读取，Node
 直接读取同一关系。通知、提及和管理看板的 Project 字段也通过下文原生项目事实读取。默认
 应用宽角色也仍是兼容装配，不能把本轮定向撤权试验视为默认凭据已收紧。边界见
-[ADR-0174](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0174-workspace-nonlocking-member-facts.md)。
+[ADR-0174](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0174-workspace-nonlocking-member-facts.md)。
 
 ## 项目集合、投影与元数据
 
@@ -453,7 +453,7 @@ null 与非对象值仍原样返回。合同复用 `PROJECT_ROW_COLUMNS`，不�
 
 应用只新增两项公开关系的 SELECT；默认宽角色仍属兼容装配。三处 Labeling 计数
 原子写入和完整模块资格继续按台账推进。边界与定向验收见
-[ADR-0175](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0175-workspace-project-fact-relations.md)。
+[ADR-0175](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0175-workspace-project-fact-relations.md)。
 
 ## 最终写入与批量分派的成员锁
 
@@ -466,7 +466,7 @@ membership_busy 与账号 → 项目 → 成员锁序，不解码无关时间列
 所有操作保留调用方 Session 与提交边界。返回行严格校验项目、请求用户集、重复与
 顺序；异常范围失败由调用方回滚。只新增现有应用可执行的两项固定函数，没有新增
 运行进程或凭据。语义与限定验收见
-[ADR-0170](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0170-workspace-transactional-member-locks.md)；完整装配仍按模块台账推进。
+[ADR-0170](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0170-workspace-transactional-member-locks.md)；完整装配仍按模块台账推进。
 
 ## 项目删除的调用方事务
 
@@ -494,7 +494,7 @@ Audit 获取当前锁定的身份事实并写入 `project.delete`。应用 LOGIN
 同一 ID 改用其他 actor 或项目返回 `operation_conflict`。公开 HTTP 重试不会进入该回执重放路径。
 Jobs 与通知保留[原项目范围](./module-data#jobs-保留的项目范围)，不会因项目删除而变为全局。
 
-设计与验收范围见 [ADR-0165](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0165-workspace-caller-transaction-project-deletion.md)。
+设计与验收范围见 [ADR-0165](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0165-workspace-caller-transaction-project-deletion.md)。
 
 ## 普通消费者的 SQL 凭据边界
 
@@ -513,7 +513,7 @@ Jobs 与通知保留[原项目范围](./module-data#jobs-保留的项目范围)�
 此前 13 项本地定向案例通过，含真实 HTTP 生命周期与搜索、Node、worker 计数及回滚，
 另有 8 项既有角色回归通过。兼容授权保持清理 worker 的八项函数，避免重新授权 API 时退回
 两项 outbox 能力。完整模块的既往冷工件／装配／恢复结果见[历史模块审计](/dev/concepts/module-deployment#workspace-module-audit)；凭据切片的原始范围见
-[ADR-0179](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0179-workspace-consumer-credential-closure.md)。
+[ADR-0179](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0179-workspace-consumer-credential-closure.md)。
 
 默认内嵌运行采用不同的权限组合：LAN 和 worktree 共用 Workspace 私有存储 ACL，
 移除上述私表／列、回执、分区、相关序列及 schema CREATE，并清除宽默认授权；

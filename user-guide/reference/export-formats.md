@@ -384,7 +384,7 @@ names:
 - `geometry` 使用平台**内部格式**（`bbox` / `polygon` / `multi_polygon` / `polyline` / `rotated_bbox` / `keypoint`），不嵌套 LabelStudio shape。预测导入端也接受可选 `shapes[]`，用于把多个 shape 合并到同一条 prediction；`video_bbox` / `video_track_bbox` 暂不导入。
 - `project.tool_bindings` (工具维度类别 / 属性绑定) + 每条 annotation / prediction 的 `tool_unit_id`(`bbox` / `region` / `polyline` / `rotated_bbox` / `keypoint` / `lidar_box_3d` / `point_mask_3d`)。导入端缺失时按 LS shape 类型回退派生(rectanglelabels→bbox, 带 rotation 的 rectanglelabels→rotated_bbox, polygonlabels→region, polylinelabels→polyline, keypointlabels→keypoint)。遗留文件中的 `ai_interactive` 会按几何归位到 `region` / `bbox`，新导出不再产生该值。
 
-详见 [ADR-0024](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/archive/0024-aap-json-format.md) · [ADR-0026](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/archive/0026-tool-unit-class-and-attribute-binding.md) · [API 导入指南](../../api/guides/import.md)。
+详见 [ADR-0024](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/archive/0024-aap-json-format.md) · [ADR-0026](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/archive/0026-tool-unit-class-and-attribute-binding.md) · [API 导入指南](../../api/guides/import.md)。
 
 ## 点云标准训练格式
 

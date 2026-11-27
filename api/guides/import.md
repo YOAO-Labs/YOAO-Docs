@@ -65,7 +65,7 @@ image_height=<optional COCO fallback height>
 
 请求的 `format=native_json` 选择原生格式；不要把这个值写进文件。新文件使用 `schema_version: "2.0"`、`format: "yoao"` 和 `exported_from.platform: "yoao"`。历史 `1.x` 文件按原身份读取，不需要手动替换旧标识。
 
-同一份文件可以同时包含 `predictions[]` 与 `annotations[]`。预测导入只计待审预测；`POST /api/v1/projects/{project_id}/annotations/import` 只计正式标注，默认追加，`dry_run=true` 只预览。另一类记录不计为跳过。两条路径都通过 `mask_objects` 恢复图片与视频 Mask。完整字段见[原生交换格式](../../user-guide/reference/export-formats#aap-json-1-5-无损)；设计背景见 [ADR-0024](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/archive/0024-aap-json-format.md)。
+同一份文件可以同时包含 `predictions[]` 与 `annotations[]`。预测导入只计待审预测；`POST /api/v1/projects/{project_id}/annotations/import` 只计正式标注，默认追加，`dry_run=true` 只预览。另一类记录不计为跳过。两条路径都通过 `mask_objects` 恢复图片与视频 Mask。完整字段见[原生交换格式](../../user-guide/reference/export-formats#aap-json-1-5-无损)；设计背景见 [ADR-0024](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/archive/0024-aap-json-format.md)。
 
 COCO 导入同时识别 bbox、polygon segmentation 与 uncompressed RLE segmentation。RLE 会先写入共享内容层，再形成 `raster_mask` 候选；非法、空前景或尺寸不匹配的 segmentation 作为逐 annotation 错误返回，不会静默降级成 bbox。
 

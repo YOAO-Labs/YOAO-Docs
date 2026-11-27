@@ -8,7 +8,15 @@ const REPO_ROOT = resolveYoaoRepoRoot("check-doc-snippets");
 
 function walk(dir, out = []) {
   for (const name of readdirSync(dir)) {
-    if (name === "node_modules" || name.startsWith(".")) continue;
+    if (
+      name === "node_modules" ||
+      name === "_yoao-source" ||
+      name === "_sources" ||
+      name === "changelog" ||
+      name.startsWith(".")
+    ) {
+      continue;
+    }
     const p = join(dir, name);
     const st = statSync(p);
     if (st.isDirectory()) walk(p, out);

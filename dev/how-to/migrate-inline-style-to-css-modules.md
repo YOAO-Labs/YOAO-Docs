@@ -50,7 +50,7 @@ function cn(...xs: Array<string | false | null | undefined>): string {
 
 ### 4. 加 ESLint 文件级 guard
 
-[`apps/web/eslint.config.js`](https://github.com/YOAO-Labs/YOAO/blob/main/apps/web/eslint.config.js) 已对 `src/**/*.tsx` 启用 inline-style guard：
+[`apps/web/eslint.config.js`](https://github.com/YOAO-Labs/YOAO/blob/dev/apps/web/eslint.config.js) 已对 `src/**/*.tsx` 启用 inline-style guard：
 
 ```js
 {
@@ -87,5 +87,5 @@ function cn(...xs: Array<string | false | null | undefined>): string {
 
 完整对照：
 
-- 现行示例：[`AIPreAnnotateJobsPage.tsx`](https://github.com/YOAO-Labs/YOAO/blob/main/apps/web/src/pages/AIPreAnnotate/AIPreAnnotateJobsPage.tsx) + [`AIPreAnnotateJobsPage.module.css`](https://github.com/YOAO-Labs/YOAO/blob/main/apps/web/src/pages/AIPreAnnotate/AIPreAnnotateJobsPage.module.css)。
+- 现行示例：[`AIPreAnnotateJobsPage.tsx`](https://github.com/YOAO-Labs/YOAO/blob/dev/apps/web/src/pages/AIPreAnnotate/AIPreAnnotateJobsPage.tsx) + [`AIPreAnnotateJobsPage.module.css`](https://github.com/YOAO-Labs/YOAO/blob/dev/apps/web/src/pages/AIPreAnnotate/AIPreAnnotateJobsPage.module.css)。
 - 同目录组件继续采用同名 `.module.css`；批量修改后用前端 lint 的 inline-style guard 与 `lint:css-tokens` 确认没有重新引入内联样式或遗留令牌。

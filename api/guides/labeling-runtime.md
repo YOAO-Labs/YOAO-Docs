@@ -38,7 +38,7 @@ Labeling；其未提交变化可被同一连接读取，回滚时一起撤销。
 `aap-labeling-class-query/v1`、便携 PostgreSQL／HTTP 提供方及其 `labeling-grants.sql`（`-v grant_class_query=1`）
 三函数验收登录仍供独立合同验证。冻结的公开响应、双语句间提交、权限拒绝、调用方回滚
 及数据库恢复分别验收；旧分进程资格不代表当前装配或生产容量。
-历史范围见 [ADR-0142](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0142-labeling-class-usage-query-owner.md)。
+历史范围见 [ADR-0142](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0142-labeling-class-usage-query-owner.md)。
 
 ## 任务编辑锁与生命周期
 
@@ -217,7 +217,7 @@ Mask 引用在最终写入事务内锁定，并沿用已有字节核验：保存
 及完整容量门槛仍需独立验证。
 人工审核及中间 start/progress 仍由 API 持有，不能据此认定整个 Labeling
 已独立部署或可替换语言。Go 月报服务继续作为架构实验。范围和限制见
-[ADR-0159](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0159-independent-labeling-video-writer.md)。
+[ADR-0159](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0159-independent-labeling-video-writer.md)。
 
 ## 草稿与配置孤儿清理 {#annotation-maintenance}
 

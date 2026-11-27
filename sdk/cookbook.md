@@ -156,7 +156,7 @@ yoao jobs wait "$job_id" --json
 
 ## 5. 从 echo 示例改出一个 OCR backend
 
-接入自定义模型推理服务属于 ML Backend 范畴,完整教程(echo 示例 → OCR backend → 注册到平台)见 [ML Backend 接入教程](/dev/ml-backend/starter)。
+接入自定义模型推理服务属于插件生态与推理协议范畴，SDK 开发见[快速开发推理插件](/plugins/sdk/inference-quickstart)，裸 HTTP 教程（echo 示例 → OCR backend → 注册到平台）见[从零编写兼容 HTTP 后端](/plugins/protocols/http-from-scratch)。
 
 ## 6. 冻结数据并提交训练
 

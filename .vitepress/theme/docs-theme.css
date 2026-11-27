@@ -638,3 +638,11 @@ html.dark .doc-theme-images > p:first-child {
     transition: none !important;
   }
 }
+
+.VPNavBarMenu .VPNavBarMenuGroup .button .vpi-chevron-down.text-icon {
+  display: none;
+}
+
+.redirect-notice {
+  padding: 24px 0;
+}

@@ -26,7 +26,7 @@ last_reviewed: 2026-10-19
 
 任务级读取、媒体、租约、点云与几何修改见 [任务工作流](./task-workflows)；六条 WebSocket 的离线发现、typed 事件、鉴权与有界 NDJSON 监听见 [公开事件流](./streams)。REST 已覆盖全部 558 项采用接口，十项执行器内部协议保持排除。
 
-Agent 自动化调用、离线能力发现与结构化错误，见 [Agent 接入与操作](./agents)；在线学习、数据版本冻结与模型发布，见 [在线学习与模型训练](../../api/guides/training-datasets) 及 `yoao learning` CLI 命令组。
+Agent 自动化调用、离线能力发现与结构化错误，见 [Agent 接入与操作](./agents)；在线学习、数据版本冻结与模型发布，见 [在线学习与模型训练](/api/guides/training-datasets) 及 `yoao learning` CLI 命令组。
 
 ## 安装
 

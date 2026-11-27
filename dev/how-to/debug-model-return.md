@@ -52,7 +52,7 @@ last_reviewed: 2026-10-19
 
 预测使用 `trained:{version_id}` 及最小 `frozen_model_ref`，Backend 回传 `meta.trained_model` 和 `native_class_index`。平台核对身份、矩形框坐标和置信度后才映射项目类别。只看到安装收据不能将部署认定为 `ready`；重新加载可修复损坏副本，但不能改写候选权重。
 
-代码入口为 `services/trained_models.py` 的 `install_and_trial()`、`wire_context()` 与 `validate_and_map_results()`，Backend 对应 [YOLO 插件](https://github.com/YOAO-Labs/YOAO-Plugins/tree/main/plugins/inference/yolo)的 `managed_models.py` 和 `main.py`。字段与状态码见[受控模型部署协议](../reference/ml-backend-protocol#_12-受控自训模型部署协议-managed-models)。
+代码入口为 `services/trained_models.py` 的 `install_and_trial()`、`wire_context()` 与 `validate_and_map_results()`，Backend 对应 [YOLO 插件](https://github.com/YOAO-Labs/YOAO-Plugins/tree/main/plugins/inference/yolo)的 `managed_models.py` 和 `main.py`。字段与状态码见[受控模型部署协议](/plugins/protocols/inference-v2#_12-受控自训模型部署协议-managed-models)。
 
 ### 4. 试用成功但无法发布
 

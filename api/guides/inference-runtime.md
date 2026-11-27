@@ -61,7 +61,7 @@ docker compose --env-file /path/to/inference.env -p aap-inference-development \
 
 开发 Celery 接入该私网服务时，基础 Compose 叠加 `docker-compose.inference-workers-development.yml`。`INFERENCE_DEVELOPMENT_CLIENTS_DIR` 指向仓库外的私有目录；为 `default`、`gpu`、`cpu`、`gpu-control` 分别准备同名 `.env`，只设置本队列的私网 URL 和相应 `_TOKEN_FILE=/run/secrets/inference-client/<文件名>`。每个队列只读挂入自己的 `callers/<队列>/`，不挂 GPU 签名或采集数据库凭据。未接入独立 Inference 时不用这个 overlay。
 
-在仅给 owner 使用的 env 文件里，把 `.env.example` 中 28 个 `INFERENCE_RUNTIME_*_FILE` 指向实际 secret 文件：十八个专用 PostgreSQL LOGIN 的 DSN、八个不同的 HTTP bearer、一个 GPU 账本 Redis 身份、一个 Ed25519 私钥环。Compose 以只读方式挂载这些文件，针对 UID/GID 10008 设置最小读取权限；不要把它们放进源码、镜像或 API 的 env 文件。`GPU_LIFECYCLE_ACTIVE_SIGNING_KID` 对应私钥环中的 key ID；collector DSN 使用完整 `postgresql+asyncpg://` URL。文件与授权映射见 [`docker-compose.inference.yml`](https://github.com/YOAO-Labs/ai-annotation-platform/blob/main/docker-compose.inference.yml) 和[专用 DSN](#使用专用-dsn)。
+在仅给 owner 使用的 env 文件里，把 `.env.example` 中 28 个 `INFERENCE_RUNTIME_*_FILE` 指向实际 secret 文件：十八个专用 PostgreSQL LOGIN 的 DSN、八个不同的 HTTP bearer、一个 GPU 账本 Redis 身份、一个 Ed25519 私钥环。Compose 以只读方式挂载这些文件，针对 UID/GID 10008 设置最小读取权限；不要把它们放进源码、镜像或 API 的 env 文件。`GPU_LIFECYCLE_ACTIVE_SIGNING_KID` 对应私钥环中的 key ID；collector DSN 使用完整 `postgresql+asyncpg://` URL。文件与授权映射见 [`docker-compose.inference.yml`](https://github.com/YOAO-Labs/YOAO/blob/dev/docker-compose.inference.yml) 和[专用 DSN](#使用专用-dsn)。
 
 `GET /health` 要求 `pipelines,backend_probe,health_observation,registry_ingress,routing,execution,backend_control,gpu` 八项全部就绪。容器使用只读根文件系统、32 MiB 不允许设备节点的 `/tmp`、丢弃 capabilities 和 `no-new-privileges`，宿主发布仅限 loopback。`INFERENCE_MAX_CONCURRENCY` 默认 8，满载立即拒绝，不建立无界等待队列。
 
@@ -217,7 +217,7 @@ yoao-video-restore --database-url-file /secure/restore-dsn --status "$RESTORE_ID
 
 命令文件固定同一恢复 UUID、备份和外部围栏 SHA-256，以及 inspect 返回的目标身份。退出码为零仍可能是 `pending`；核对实际 controller epoch／incarnation 与完成回执后，才能恢复普通 claim。
 
-摘要不是外部进程停止、S3 身份撤销或对象存储恢复的证明。先满足[备份恢复前提](/ops/deploy/docker-compose#_5-0-恢复前提与执行权)，再按[协调恢复决策](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0160-coordinated-video-restore.md)操作。
+摘要不是外部进程停止、S3 身份撤销或对象存储恢复的证明。先满足[备份恢复前提](/ops/deploy/docker-compose#_5-0-恢复前提与执行权)，再按[协调恢复决策](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0160-coordinated-video-restore.md)操作。
 
 ## 当前边界
 

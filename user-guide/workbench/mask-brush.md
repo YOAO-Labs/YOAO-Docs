@@ -339,6 +339,6 @@ Buffer 都会保留；网络或服务暂时错误可用原幂等键「重试实�
 
 ## 相关 ADR
 
-- [ADR-0022 · Mask 编辑器工具架构](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/archive/0022-mask-editor-tool-architecture.md)
-- [ADR-0052 · 共享栅格 Mask 与图片 geometry 合同](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/archive/0052-shared-raster-mask-and-image-geometry.md)
-- [ADR-0054 · Raster Mask 大画布内存与分块决策](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/archive/0054-raster-mask-large-canvas-memory-and-tiles.md)
+- [ADR-0022 · Mask 编辑器工具架构](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/archive/0022-mask-editor-tool-architecture.md)
+- [ADR-0052 · 共享栅格 Mask 与图片 geometry 合同](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/archive/0052-shared-raster-mask-and-image-geometry.md)
+- [ADR-0054 · Raster Mask 大画布内存与分块决策](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/archive/0054-raster-mask-large-canvas-memory-and-tiles.md)

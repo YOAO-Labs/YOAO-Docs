@@ -1,13 +1,14 @@
 ---
+title: Inference Protocol v2
 audience: [dev, ops]
 type: reference
 status: stable
-last_reviewed: 2026-11-23
+last_reviewed: 2026-11-27
 ---
 
-# ML Backend 协议契约
+# Inference Protocol v2（ML Backend 协议契约）
 
-本页定义推理服务对平台提供的 HTTP 端点、字段、错误和兼容要求。注册、启用或编写插件见[接入教程](/dev/ml-backend/starter)，平台内部的服务池、路由与凭据管理见[模型服务接入、路由与认证](../concepts/ml-backend-routing-and-auth)。
+本页定义推理服务对平台提供的 HTTP 端点、字段、错误和兼容要求。从零编写或接入教程见[从零编写兼容 HTTP 后端](./http-from-scratch)，快速 SDK 开发见[快速开发推理插件](../sdk/inference-quickstart)，平台内部的服务池、路由与凭据管理见[模型服务接入、路由与认证](/dev/concepts/ml-backend-routing-and-auth)。
 
 受控模型兼容条目必须同时声明 `framework`、`format` 和 `runtime_device`。`format: null` 明确表示没有独立导出格式标识的原生 checkpoint（如 Ultralytics 原生权重），不是通配符；具名格式使用非空字符串，缺字段或空字符串均无效。安装清单、实际 `/setup` 观测及平台保存的模型回执必须精确匹配，CPU／CUDA 资格仍分别核对。
 
@@ -39,7 +40,7 @@ API 请求和保存的流水线使用 `task`；兼容读取旧 `task_type` 和�
 
 匿名实例不接收认证头；手动令牌或系统托管实例使用 `Authorization: Bearer <token>`。使用共享凭据的服务须对 `/setup`、预测、模型和生命周期控制校验令牌；`/health` 与 `/metrics` 仍公开。受管 GPU 所需的签名和资源许可另行校验。
 
-仅系统托管握手使用 `GET /managed-auth`。成功返回 HTTP 200 与精确 JSON `{"provider":"<provider>","mode":"managed"}`，不回显令牌。平台只向该 provider 的受信任 origin 发送托管凭据。运维配置见[托管凭据](../concepts/ml-backend-routing-and-auth#系统托管凭据如何生成和同步)。
+仅系统托管握手使用 `GET /managed-auth`。成功返回 HTTP 200 与精确 JSON `{"provider":"<provider>","mode":"managed"}`，不回显令牌。平台只向该 provider 的受信任 origin 发送托管凭据。运维配置见[托管凭据](/dev/concepts/ml-backend-routing-and-auth#系统托管凭据如何生成和同步)。
 
 ---
 
@@ -129,7 +130,7 @@ GPU backend 应在 `/health` 顶层返回 `compute`：
   - **ONNXTools**：覆盖三句柄（`pipeline`、`detector`、`va`）共四个业务 ORT session；
   - **RapidOCR**：覆盖 `engines` 聚合池（默认容量 3 个 composite engine，满池最多 9 个 det/cls/rec ORT session）。
 - **目标环境强制验收（`validate_managed_lifecycle.py`）**：源码能力不等于当前部署已取得资格。每个 Backend 必须在目标镜像、完整业务权重和唯一可见物理 GPU 上运行镜像内 `scripts/validate_managed_lifecycle.py`，通过真实业务推理、两轮 full-pool drain/unload、90% 工作集回收门、provider/device 判定及故障矩阵验收（`passed=true` 且 `runtime_ephemera_clean=true`）。
-- **受控实例分割的附加资格**：部署 `trained:<版本>` 分割模型时，YOLO 验收器还须提供真实分割 checkpoint、冻结引用和代表原图；报告必须包含 `deployment.pool_topology.controlled_segment` 的两轮非空原图 RLE 冷加载、同池卸载及全部附加检查。普通四任务模型报告不能替代此路径，操作见[实例分割在线学习验收](../how-to/validate-segmentation-online-learning)。
+- **受控实例分割的附加资格**：部署 `trained:<版本>` 分割模型时，YOLO 验收器还须提供真实分割 checkpoint、冻结引用和代表原图；报告必须包含 `deployment.pool_topology.controlled_segment` 的两轮非空原图 RLE 冷加载、同池卸载及全部附加检查。普通四任务模型报告不能替代此路径，操作见[实例分割在线学习验收](/dev/how-to/validate-segmentation-online-learning)。
 - **启动门控开关（`*_MANAGED_LIFECYCLE_VERIFIED`）**：环境变量只接受字面量 `0` 或 `1`（非法值拒绝启动）。默认值 `0` 会隐藏能力、拒绝 enforce 并令 `evictable=false`；仅当运维复核当前部署的通过证据后才可设为 `1`。镜像、权重、pool cap、GPU UUID、driver 或 runtime 任一变化均使旧证据失效，必须恢复 `0` 并重新验收。
 
 #### `/health` 顶层 `residency` 结构
@@ -449,7 +450,7 @@ instance / pool、目标 model 与 `model_version`，供后续接受时写入 li
 >
 > - **输出几何**：`context.output_geometry` 受控取 `bbox / polygon / mask`。`mask` 返回 `{type:"mask", rle:{encoding:"coco_rle", size:[h,w], counts:[...]}}`；counts 使用 COCO column-major runs，平台会校验并转换为内容寻址引用。空 mask 用 `outside=true`，不能返回全零 bbox 冒充对象。
 > - **真实推理（gsam2）**：backend 用 `build_sam2_video_predictor` + `SAM2VideoPredictor`（带跨帧 memory bank 的有状态预测，非循环调图片接口），按 `output_geometry` 直接返回 mask、polygon 或外接 bbox。视频解码用容器内 opencv 抽窗内帧到临时 JPEG 目录喂 `init_state`。`confidence` 非空 mask 记 1.0、空 mask（outside）记 0.0。
-> - **独立显存池**：video predictor 用独立的 `VideoPool`（按 `sam_variant` 分桶），与图片 `ModelPool` 显存预算分离、互不驱逐，按 job 结束释放会话状态。遵循 [ADR-0012](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/archive/0012-sam-backend-as-independent-gpu-service.md)，predictor 不入 `apps/api`。
+> - **独立显存池**：video predictor 用独立的 `VideoPool`（按 `sam_variant` 分桶），与图片 `ModelPool` 显存预算分离、互不驱逐，按 job 结束释放会话状态。遵循 [ADR-0012](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/archive/0012-sam-backend-as-independent-gpu-service.md)，predictor 不入 `apps/api`。
 > - **`sam_variant`**：请求链路可传——AI 追踪面板为 SAM2 选尺寸 → `VideoTrackerPropagateRequest.sam_variant` → 存入 `job.prompt` → `TrackerContext` → adapter 在 `context.model_variants.sam_variant` 透传；缺省（未选）时 backend 回退默认 tiny。backend `/predict` video_tracker 分支按 `context.model_variants.sam_variant` 从 `VideoPool` 取对应尺寸 tracker。
 > - **种子输入 `context.seeds[]`（点 / 框 / 多目标）**：`sam2_video` 与 `sam3_video_interactive` 接受完整点 / 框种子——每条可用 `{obj_id?, bbox?, points?}` 单帧简写或 `{obj_id, prompts:[{frame_index, points?, bbox?}, ...]}` 多帧写法。`sam3_video` multiplex 消费每条 seed 的 `bbox` 或可转成外接框的 `geometry`，在新分窗的种子帧把这些框作为正提示与 `text` 组合；不消费点或多帧纠偏。坐标归一化到 [0,1]，点 `label` 1=正点 / 0=负点，缺 `obj_id` 按序补 1..N。backend 应优先显式 seeds，缺省时才用 `source_geometry` 单框兜底。平台从 `job.prompt.seeds` 读取并经 `TrackerContext.seeds` 透传；首窗下发原始提示，后续窗按各实例续种。
 >   - **多帧 prompt（中途纠偏）**：seed 还可写成 `{obj_id, prompts:[{frame_index, points?/bbox?/mask_prompt?}, ...]}`——`frame_index` 是**绝对源帧**，各 prompt 在其（局部）帧对该 obj 播种，PVS memory 逐帧累积。`mask_prompt` 是经共享有界 schema 验证的内联 COCO RLE，尺寸必须与视频帧一致，并直接调用 PVS `add_new_mask`；Multiplex 尚不声明 Mask seed。`prompts` 优先于单帧 `bbox`/`points`/`mask_prompt`，窗外绝对帧会稳定拒绝，不再静默 clamp 到边界帧。
@@ -621,7 +622,7 @@ span 边界继续使用上一窗末帧 geometry 续种。
 
 **用途**：自描述 backend 能力，前端 `useMLCapabilities` hook 据此决定哪些 AI 工具可用、参数面板渲染哪些字段。
 
-> 协议背后的架构决策：[ADR-0020 — ML Backend Capability 协商协议](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/archive/0020-ml-backend-capability-negotiation.md)。该 ADR 解释了为什么 `params` 限制为 Draft-07 子集、为什么走 apps/api 代理而非前端直连。
+> 协议背后的架构决策：[ADR-0020 — ML Backend Capability 协商协议](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/archive/0020-ml-backend-capability-negotiation.md)。该 ADR 解释了为什么 `params` 限制为 Draft-07 子集、为什么走 apps/api 代理而非前端直连。
 
 **响应**：JSON Schema 自描述协议。**必填**三元组：`name` / `version` / `model_version`；`supported_prompts` 决定 ToolDock 工具置灰；`params` 是 JSON Schema (Draft-07 子集)，前端 schema-form 自动渲染；`supported_variants` 可选，用于给变体选择器补充显存 / 档位 / 推荐等富元数据。
 
@@ -695,7 +696,7 @@ Backend 必须如实声明 `/setup.is_interactive`。平台代理、能力快照
 
 ### 4.1 能力声明协议 v2（多模型目录 + infra）
 
-> 协议背后的架构决策：[ADR-0036 — ML Backend 能力声明协议 v2（多模型目录 + infra）](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/archive/0036-ml-backend-capability-protocol-v2-multi-model.md)。
+> 协议背后的架构决策：[ADR-0036 — ML Backend 能力声明协议 v2（多模型目录 + infra）](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/archive/0036-ml-backend-capability-protocol-v2-multi-model.md)。
 
 §4 描述的 `/setup` 是**单模型快照**形态——隐含「1 个 backend ≈ 1 个模型族」。协议 v2 在**完全向后兼容**前提下，把能力声明下沉到 **model 粒度**，让一个 backend 暴露一份 model list（一个 backend = N 个 model），每个 model 自带能力 + infra + variants。典型消费者是未来的 **YOLO 官仓 backend**（一个仓覆盖 det/seg/pose/obb/cls × series × size）与 **ONNX 聚合 backend**（一个进程聚合检测 / 关键点 / OCR / 抠图等异构模型）。
 
@@ -1104,7 +1105,7 @@ result 映射（统一 adapter，不新增 prediction 表）：`ocr_text` → `a
 
 **真实 OCR 参考实现**：[RapidOCR 插件](https://github.com/YOAO-Labs/YOAO-Plugins/tree/main/plugins/inference/rapidocr)提供 `ocr-det`、`ocr-rec` 和 `ocr-e2e`，资产需独立审核和准备。
 
-**协议形态参考实现（无真实推理）**：[`examples/ml-backend/mock-v2-backend/`](https://github.com/YOAO-Labs/YOAO/tree/main/examples/ml-backend/mock-v2-backend) —— `/setup` 暴露 YOLO 风格多任务 `models[]`、PaddleOCR / DocLayout、点 / 框 / exemplar 交互分割及视频 tracker 条目；`/predict` 按 `context.type` 返回固定几何、OCR 文本属性或逐帧追踪结果。可在该示例目录用 `uvicorn main:app --port 9100` 启动，平台仍通过正常探测和绑定读取其能力。固定响应只用于理解协议，不代表真实模型结果。
+**协议形态参考实现（无真实推理）**：[`examples/ml-backend/mock-v2-backend/`](https://github.com/YOAO-Labs/YOAO/tree/dev/examples/ml-backend/mock-v2-backend) —— `/setup` 暴露 YOLO 风格多任务 `models[]`、PaddleOCR / DocLayout、点 / 框 / exemplar 交互分割及视频 tracker 条目；`/predict` 按 `context.type` 返回固定几何、OCR 文本属性或逐帧追踪结果。可在该示例目录用 `uvicorn main:app --port 9100` 启动，平台仍通过正常探测和绑定读取其能力。固定响应只用于理解协议，不代表真实模型结果。
 
 **最小 v2.1 参考实现**：见[可运行 echo](#_8-最小-echo-backend-示例)。
 
@@ -1261,7 +1262,7 @@ v2.1 推荐 backend 使用结构化错误体。平台代理会保留上游 4xx�
 
 共享实现位于 `apps/_shared/protocol_v2/src/yoao_protocol_v2/errors.py`：`VariantNotSupportedError` 与 `ModelUnavailableError`。三家内置 backend 已统一使用这两个错误类。
 
-平台接口错误与失败预测的持久结果见[预测与作业](/api/guides/predictions)；GPU 拒绝的运行边界见[路由与认证](../concepts/ml-backend-routing-and-auth)。
+平台接口错误与失败预测的持久结果见[预测与作业](/api/guides/predictions)；GPU 拒绝的运行边界见[路由与认证](/dev/concepts/ml-backend-routing-and-auth)。
 
 ---
 
@@ -1283,11 +1284,11 @@ v2.1 推荐 backend 使用结构化错误体。平台代理会保留上游 4xx�
 
 ## 8. 最小 echo backend 示例
 
-完整源码见[接入教程的 Echo 示例](/dev/ml-backend/starter#step-1-跑通-echo-示例)，也可从[样板目录](https://github.com/YOAO-Labs/YOAO/tree/main/examples/ml-backend/echo-ml-backend)直接运行。教程的源码片段由文档构建检查与 `main.py` 逐字一致。
+完整源码见[从零编写兼容 HTTP 后端的 Echo 示例](./http-from-scratch#step-1-跑通-echo-示例)，也可从[样板目录](https://github.com/YOAO-Labs/YOAO/tree/dev/examples/ml-backend/echo-ml-backend)直接运行。教程的源码片段由文档构建检查与 `main.py` 逐字一致。
 
 ## 9. 接入 checklist
 
-开发者自查清单维护在[接入教程](/dev/ml-backend/starter#integration-checklist)。
+开发者自查清单维护在[从零编写兼容 HTTP 后端](./http-from-scratch#integration-checklist)。
 
 ## 10. 兼容性与迁移
 
@@ -1300,23 +1301,23 @@ protocol v2.1 为 minor bump，不是 v3。平台与内置 backend 保留 v2.0 �
 | `context.model_variant`                        | `context.model_variants.model_variant`                   | sam3-backend normalize；非 `sam3` 仍返回 422                       |
 | `params.*_variant.enum` 无 role                | `supported_variants[]` 或 `x-platform-role=modelVariant` | 前端仍回落渲染 legacy enum；新 backend 应声明 `supported_variants` |
 
-升级时同时核对旧输入和规范输出。接入顺序见[接入教程](/dev/ml-backend/starter#integration-checklist)。
+升级时同时核对旧输入和规范输出。接入顺序见[从零编写兼容 HTTP 后端](./http-from-scratch#integration-checklist)。
 
 ## 11. 参考实现
 
-运行库在 `apps/_shared/protocol_v2`，任务词表在 `apps/_shared/task_contract`。可跑样例和真实插件见[参考实现](#_4-1-10-可跑参考实现)。
+便携协议与任务词表由主仓 `yoao-sdk[protocol]` 提供，运行时与检测创作 SDK 位于 Plugin-SDK。可跑样例和真实插件见[参考实现](#_4-1-10-可跑参考实现)。
 
 ### 协议验证
 
-从仓库根运行 `bash scripts/run-ml-cpu-tests.sh run shared-protocol-v2` 检查任务字段、请求与响应 schema、错误和生命周期合同。Echo 和 Mock v2 分别在各自样例目录运行 `uv run --extra test pytest -q`。受控模型资产走同一 runner 的 `controlled-assets` 套件；CPU 套件不能证明真实权重、端点认证形态或 GPU 资格。
+从主仓根运行 `bash scripts/run-ml-cpu-tests.sh run shared-protocol-v2` 检查任务字段、请求与响应 schema、错误和生命周期合同。Echo 和 Mock v2 分别在各自样例目录运行 `uv run --extra test pytest -q`。受控模型资产走同一 runner 的 `controlled-assets` 套件；CPU 套件不能证明真实权重、端点认证形态或 GPU 资格。
 
 ## 全局注册表与项目启用
 
-实例与服务池的选择及管理见[模型服务接入、路由与认证](../concepts/ml-backend-routing-and-auth)。项目绑定和管理端点见 [ML Backend 平台 API](/api/guides/ml-backend)。
+实例与服务池的选择及管理见[模型服务接入、路由与认证](/dev/concepts/ml-backend-routing-and-auth)。项目绑定和管理端点见 [ML Backend 平台 API](/api/guides/ml-backend)。
 
 ### 服务池与请求路由（ADR-0050）
 
-持久状态、路由模式和停流边界见[一个推理请求如何到达 Backend](../concepts/ml-backend-routing-and-auth#一个推理请求如何到达-backend)。
+持久状态、路由模式和停流边界见[一个推理请求如何到达 Backend](/dev/concepts/ml-backend-routing-and-auth#一个推理请求如何到达-backend)。
 
 ### 后端执行范围的定向退役
 
@@ -1334,11 +1335,11 @@ challenge。其他 scope 继续运行。屏蔽记录覆盖 Native 记录的实�
 提供方必须在 handler 完成前登记所有继续运行的 future，路由 middleware 会等待这些
 工作真正结束。退役／epoch 屏障后的迟到登记会封锁准入及后续静默证明；该保护不能
 追溯撤销旧证明。任意未登记工作不在协议可证明范围内，这类实现不能通过提供方资格。
-协议与当前本地验证边界见 [ADR-0156](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0156-scoped-inference-retirement.md)。
+协议与当前本地验证边界见 [ADR-0156](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0156-scoped-inference-retirement.md)。
 
 #### 受管派发与显存驱逐执行流（GPU Authority）
 
-提供方须遵循[受管 GPU 生命周期](#_1-3-受管-gpu-生命周期-能力协商)的签名、驻留证明和确认顺序。平台的本地 semaphore、显存队列、victim 选择及超时见[受管派发与显存驱逐](../concepts/ml-backend-routing-and-auth#受管派发与显存驱逐)。
+提供方须遵循[受管 GPU 生命周期](#_1-3-受管-gpu-生命周期-能力协商)的签名、驻留证明和确认顺序。平台的本地 semaphore、显存队列、victim 选择及超时见[受管派发与显存驱逐](/dev/concepts/ml-backend-routing-and-auth#受管派发与显存驱逐)。
 
 ---
 
@@ -1350,7 +1351,7 @@ challenge。其他 scope 继续运行。屏蔽记录覆盖 Native 记录的实�
 
 ### 认证与模型身份
 
-请求使用 `Authorization: Bearer <backend-token>`。内置 YOLO 默认读取自己的系统托管凭据；手动 `YOLO_MANAGED_MODELS_TOKEN` 优先于 `AAP_BACKEND_AUTH_TOKEN` 和凭据文件。凭据缺失、无效或不匹配时返回 `403`，不会因手动环境变量留空而关闭认证。配置入口及凭据优先级见[模型服务接入、路由与认证](../concepts/ml-backend-routing-and-auth)。
+请求使用 `Authorization: Bearer <backend-token>`。内置 YOLO 默认读取自己的系统托管凭据；手动 `YOLO_MANAGED_MODELS_TOKEN` 优先于 `AAP_BACKEND_AUTH_TOKEN` 和凭据文件。凭据缺失、无效或不匹配时返回 `403`，不会因手动环境变量留空而关闭认证。配置入口及凭据优先级见[模型服务接入、路由与认证](/dev/concepts/ml-backend-routing-and-auth)。
 
 模型身份由 `model_version_id`、权重 `sha256` 与有序类别摘要 `classes_digest` 共同固定。平台注册时另外保存类别绑定和实验来源；API 不接受浏览器上传任意权重替换这份身份。
 
@@ -1364,7 +1365,7 @@ YOLO 在 `/setup` 中以 `model_metadata_endpoint=true` 声明这个可选接口
 
 有核验观测的内置阶段通过 `context.builtin_model_ref` 携带 `artifact_sha256`、`classes_digest`、`loader_version`。YOLO 在实际借出的模型上匹配三者，身份不符返回 409。未核验的内置检测若使用原生类别索引过滤，也须核对实际类别与预置声明一致，避免用错索引。项目训练模型继续使用 `frozen_model_ref`，原生索引先过滤，返回平台后再按版本冻结的绑定转换为项目类别。
 
-受控图片检测允许整图根阶段和父框裁剪阶段；受控实例分割仅允许图片整图源阶段。每阶段独立冻结模型、Registry、收据和类别绑定。工作台当前题、批量预标和失败完整重试共享执行契约；实例或身份不可用时明确失败，不回退到基础模型。交互、视频和其他训练任务仍须各自取得资格。详见[执行快照](../concepts/prediction-pipeline#模型目录与执行快照)。
+受控图片检测允许整图根阶段和父框裁剪阶段；受控实例分割仅允许图片整图源阶段。每阶段独立冻结模型、Registry、收据和类别绑定。工作台当前题、批量预标和失败完整重试共享执行契约；实例或身份不可用时明确失败，不回退到基础模型。交互、视频和其他训练任务仍须各自取得资格。详见[执行快照](/dev/concepts/prediction-pipeline#模型目录与执行快照)。
 
 ### 安装：`POST /managed-models`
 
@@ -1387,7 +1388,7 @@ Ultralytics 的请求模型定义在 YOLO 插件的 `managed_models.py` 的 `Ins
 
 LibreYOLO 原生插件使用 `libreyolo==1.6.0`，支持 YOLO9 t/s/m/c 检测，默认规格为 t，不依赖 Ultralytics。CUDA 配置固定 PyTorch `2.14.1+cu132`、torchvision `0.29.1+cu132`、CUDA build `13.2`，以 FP32 执行，`half`、AMP 和 TF32 均关闭。训练与推理版本必须匹配；`inference_runtime` 独立固定实际版本与执行资格，训练收据中的原始资格和磁盘收据不改写。显式 CPU 开发配置与历史 CPU 部署不是 CUDA 故障回退；GPU 不可用时不得改用 CPU 冒充同一部署。
 
-安装声明、发布者的资源主张与本地开发检查不能替代目标实例的受认证健康、运行时及受管 GPU 资格检查。GPU 请求还须通过既有仲裁的签名准入与生命周期控制；详见[模型服务接入、路由与认证](../concepts/ml-backend-routing-and-auth)。
+安装声明、发布者的资源主张与本地开发检查不能替代目标实例的受认证健康、运行时及受管 GPU 资格检查。GPU 请求还须通过既有仲裁的签名准入与生命周期控制；详见[模型服务接入、路由与认证](/dev/concepts/ml-backend-routing-and-auth)。
 
 检测请求及收据保持原有字段，不因新增分割能力写入空的分割资格字段。分割安装须按冻结的基础模型检查网络结构、原生 Segment 头、有限权重张量与完整有序类别，不能只相信文件名或请求声明。旧训练版本仅登记 YOLO11n 分割；当前版本的模型范围见共享模型契约。
 

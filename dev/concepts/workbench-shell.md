@@ -94,7 +94,7 @@ type StageKind = "image" | "video" | "3d";
 - **交互矩形与 Scissor 分离**：渲染 surface 与主画布交互宿主分离。主相机宽高比、OrbitControls、TransformControls、拾取及选点使用主画布的完整内容矩形；三视图各使用自己的完整行矩形。遮挡后的可见矩形只用于 scissor，不能用剩余面积重新计算投影或命中坐标。每次提交先清理共享 surface，再按可见区域绘制主 pass 和三视图 pass，移动或隐藏后不保留旧位置像素。
 - **浮窗层级与 DOM 裁剪**：共享 canvas 位于 Dockview DOM 后方，结构背景与当前 GPU 面板内容透明。`workbenchViewportRegions` 按浮窗实际层级做矩形相减，将互不重叠的可见区域同时用于 DOM 裁剪和 GPU scissor。裁剪覆盖较低 group 的背景、标题、边框及独立 `dv-render-overlay`，不裁剪含上层浮窗的公共祖先；独立 CSS 变量承载应用遮罩，避免与 Dockview 自己写入的 `clipPath` 冲突。几何与层级变化合帧测量，纯位置移动及原生 overlay 延迟定位也会触发更新，结束后停止调度并清理旧遮罩。
 - **面板可见性与生命周期**：可见性取原生 group 的活动标签、panel/group visibility 和 parking 状态；不能使用表示全局焦点的 `panel.api.isActive`，也不以延迟更新的 React `aria-hidden` 作为渲染真值。隐藏三视图停止正交 pass，隐藏相机图库暂停投影与深度覆盖层工作。相机编辑模态层和桌宠关联的 PSR 面板通过 portal 避开工作区内容裁剪，保留其坐标和编辑行为。
-- **零重建移动**：三视图管线预热、geometry generation、单帧调度及 device-lost 回退仍由现有渲染 owner 管理。布局移动不重建 Scene、不重复下载点云、不增加 renderer 或 GPU context。决策见 [ADR-0073](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/archive/0073-shared-surface-for-3d-docking.md)。
+- **零重建移动**：三视图管线预热、geometry generation、单帧调度及 device-lost 回退仍由现有渲染 owner 管理。布局移动不重建 Scene、不重复下载点云、不增加 renderer 或 GPU context。决策见 [ADR-0073](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/archive/0073-shared-surface-for-3d-docking.md)。
 
 ### Scene 连续浏览
 
@@ -328,7 +328,7 @@ context 是 `annotate|review × image|video|3d` 的六项闭集，按账号分�
 - **原子历史命令（`slice`）**：Shell 通过 `annotationSlicesApi` 提交，在原任务记录一条受限 `slice` history 命令。命令不允许嵌入 create / delete 叶批次，只保存原操作 ID、完整结果版本、恢复期限与待重试请求键。undo / redo 成功后才移动栈，失败保留位置；任务切换期间每个异步操作只结算原任务历史并刷新原任务缓存。恢复响应先更新历史，缓存刷新异步进行，避免用户立即刷新时丢失已成功撤销的历史位置。
 - **Mask 切割与回滚**：Mask 切割复用 `MaskToolbar`、`useMaskEditor` 的实例预览和 D 的主动作解析器。画布只持有两点直线的拖动状态；切题、来源 / 工具 / buffer 变化或取消时清理。`slice_mask` 预览计算只分区本地 alpha；确认才沿 `mask-mutations:commit` 上传两个结果并提交固定请求。收到 `slice_restore` 即向原任务入栈同一种受限 slice 命令；客户端不创建独立的 Mask 回滚栈。服务端恢复通过 `MaskAnnotationRevision` 解析前后版本，先锁定并校验内容，再锁对象，并在触发器捕获旧版本后保护引用期限，保持现有 GC 合同。
 
-服务端快照、幂等、版本保护与不可收窄的账本迁移见 [ADR-0074](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/archive/0074-atomic-annotation-slice-restore.md)。
+服务端快照、幂等、版本保护与不可收窄的账本迁移见 [ADR-0074](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/archive/0074-atomic-annotation-slice-restore.md)。
 
 ## 偏好四分树与设置窗口
 

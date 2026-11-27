@@ -36,7 +36,7 @@ last_reviewed: 2026-11-26
 为确保高并发生产环境下的稳定性与数据一致性，在线学习体系遵循四项根本设计原则：
 
 - **不可变快照与版本确定性**：数据版本一经发布即进入只读状态，历史快照、标签文件与 ZIP 清单永不原地篡改。所有派生分析与后续训练引用均绑定完整 SHA-256 摘要。
-- **插件化训练器与无 ML 依赖监督器**：平台核心与 `training-supervisor` 不包含任何 PyTorch、CUDA 或具体训练框架依赖。每个训练器插件独立封装在只读非 root 镜像中，采用 `yoao-extension-manifest/v1` 与 `yoao-trainer/v1` 协议（自定义训练器开发与离线契约校验见[开发自定义训练器插件](../how-to/trainer-plugins)）；注册表 `yoao_learning_v1.trainer_plugins` 强制“发现不等于资格”，管理员完成能力核验与资格导入后方可启用。监督器通过持久 `/state` 文件锁、先落盘后启动与启动期孤儿容器对账确保同一物理 GPU UUID 严格互斥，并支持 `TRAINING_GPU_UUIDS` / `TRAINING_CPU_SLOTS` 多槽位并行调度不同资源。
+- **插件化训练器与无 ML 依赖监督器**：平台核心与 `training-supervisor` 不包含任何 PyTorch、CUDA 或具体训练框架依赖。每个训练器插件独立封装在只读非 root 镜像中，采用 `yoao-extension-manifest/v1` 与 `yoao-trainer/v1` 协议（自定义训练器开发与离线契约校验见[开发自定义训练器插件](/plugins/sdk/trainer-quickstart)）；注册表 `yoao_learning_v1.trainer_plugins` 强制“发现不等于资格”，管理员完成能力核验与资格导入后方可启用。监督器通过持久 `/state` 文件锁、先落盘后启动与启动期孤儿容器对账确保同一物理 GPU UUID 严格互斥，并支持 `TRAINING_GPU_UUIDS` / `TRAINING_CPU_SLOTS` 多槽位并行调度不同资源。
 - **不可变 Attempt 与断点续训隔离**：失败重试或从检查点续训均沿用原任务配置，但会分配全新的 `TrainingAttempt`，新尝试绝不覆盖历史指标曲线或改写前次权重产物。
 - **严格收据协议与数据驱动回流门禁**：模型回流由训练器产出的 `serving_compatibility` 与推理插件能力声明做数据驱动匹配，推理后端与平台双向核验类别映射顺序、产物格式与运行时资格，防止标签错位或脏数据污染。
 
@@ -384,7 +384,7 @@ Run/Attempt/Sample 的 claim、heartbeat、失败输入、请求与证据 checkp
 
 自训检测（`detect`）和已合格 YOLO11n 实例分割（`segment`）经过核验与发布后，可回流至预标注子系统；分割的原生像素契约与预算见[实例分割闭环](./instance-segmentation-learning)。
 
-- **安装与固定样本试用**：推理服务的 `POST /managed-models` 与 `GET /managed-models/{version_id}` 使用 Backend Bearer 认证。平台发送权威权重下载地址，服务验证字节数、SHA-256、原生检测或分割任务、框架版本和类别顺序，原子保存权重及 `receipt.json`。收据字段以[受控模型部署协议](/dev/reference/ml-backend-protocol#_12-受控自训模型部署协议-managed-models)为准。
+- **安装与固定样本试用**：推理服务的 `POST /managed-models` 与 `GET /managed-models/{version_id}` 使用 Backend Bearer 认证。平台发送权威权重下载地址，服务验证字节数、SHA-256、原生检测或分割任务、框架版本和类别顺序，原子保存权重及 `receipt.json`。收据字段以[受控模型部署协议](/plugins/protocols/inference-v2#_12-受控自训模型部署协议-managed-models)为准。
 - **明确的人工发布**：平台核对收据后，调用标准 `POST /predict`，携带 `context.model_id = "trained:{version_id}"` 与 `context.frozen_model_ref`，在原冻结版本的一张验证图片上试用。成功将部署置为 `ready`；负责人确认结果后才创建项目发布，不自动发布。
 - **项目发布解析与固定路由**：`trained_models.resolve_reference()` 将检测别名 `project-release`、分割别名 `project-release:segment` 或 `trained:{version_id}` 解析为具体候选和已核验部署。预标注入队保存完整冻结引用，wire 请求携带最小权重身份；返回结果的原生类别索引经验证后映射为项目类别。检测支持已合格的整图或父框裁剪管线；分割仅支持整图源阶段，输出原尺寸实例掩码，不支持裁剪、交互提示或视频。目标实例不可用时不会改用其他权重。
 
@@ -507,17 +507,17 @@ Preview 原行、EvaluationRun 的删除意图行分别承担耐久清理责任�
 
 - [状态机总览](./state-machines) — 批次、任务与在线学习多套状态机流转
 - [仓库地图与模块归属](./repository-map) — 在线学习调用链与组件代码位置
-- [ML Backend 协议规范](/dev/reference/ml-backend-protocol) — `/managed-models` 与 `/managed-evaluation/*` 协议详细规范
+- [Inference Protocol v2](/plugins/protocols/inference-v2) — `/managed-models` 与 `/managed-evaluation/*` 协议详细规范
 - [内部 API 端点参考](/dev/reference/internal-api-endpoints) — 执行器与平台内部通信端点
-- [ADR 0076: 受控训练模型身份与发布](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/archive/0076-controlled-trained-model-identity.md)
-- [ADR 0078: 执行观测与脱敏日志](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/archive/0078-attempt-observability-and-redacted-logs.md)
-- [ADR 0079: 冻结逐样本评估](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/archive/0079-frozen-sample-evaluation.md)
-- [ADR 0080: 模型谱系与决策](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0080-model-lineage-and-decisions.md)
-- [ADR 0081: 受控项目权重初始化](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/archive/0081-controlled-training-initialization.md)
-- [ADR 0082: 有预算的串行搜索](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/archive/0082-budgeted-training-studies.md)
-- [ADR 0083: 人工主动选样](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/archive/0083-human-reviewed-active-learning.md)
-- [ADR 0084: LibreYOLO 模型回流资格](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/archive/0084-qualified-libreyolo-model-return.md)
-- [ADR 0085: 简单多边形实例训练](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0085-qualified-polygon-instance-training.md)
-- [ADR 0086: 规范任务数据契约](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/0086-canonical-task-data-contracts.md)
-- [ADR 0087: 项目任务版本流](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/archive/0087-project-task-dataset-streams.md)
-- [ADR 0189: 训练器扩展点与隔离作业协议](https://github.com/YOAO-Labs/YOAO/blob/main/docs/adr/archive/0189-trainer-extension-point.md)
+- [ADR 0076: 受控训练模型身份与发布](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/archive/0076-controlled-trained-model-identity.md)
+- [ADR 0078: 执行观测与脱敏日志](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/archive/0078-attempt-observability-and-redacted-logs.md)
+- [ADR 0079: 冻结逐样本评估](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/archive/0079-frozen-sample-evaluation.md)
+- [ADR 0080: 模型谱系与决策](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0080-model-lineage-and-decisions.md)
+- [ADR 0081: 受控项目权重初始化](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/archive/0081-controlled-training-initialization.md)
+- [ADR 0082: 有预算的串行搜索](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/archive/0082-budgeted-training-studies.md)
+- [ADR 0083: 人工主动选样](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/archive/0083-human-reviewed-active-learning.md)
+- [ADR 0084: LibreYOLO 模型回流资格](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/archive/0084-qualified-libreyolo-model-return.md)
+- [ADR 0085: 简单多边形实例训练](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0085-qualified-polygon-instance-training.md)
+- [ADR 0086: 规范任务数据契约](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/0086-canonical-task-data-contracts.md)
+- [ADR 0087: 项目任务版本流](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/archive/0087-project-task-dataset-streams.md)
+- [ADR 0189: 训练器扩展点与隔离作业协议](https://github.com/YOAO-Labs/YOAO/blob/dev/docs/adr/archive/0189-trainer-extension-point.md)
