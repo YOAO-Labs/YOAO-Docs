@@ -1,0 +1,20 @@
+{
+  "apiRoutes": 783,
+  "apiModules": 121,
+  "docPages": 275,
+  "extensionPoints": 5,
+  "extensionPointIds": [
+    "inference",
+    "trainer",
+    "notification_channel",
+    "format_adapter",
+    "theme"
+  ],
+  "officialPlugins": {
+    "total": 10,
+    "inference": 6,
+    "trainer": 2,
+    "notificationChannel": 1,
+    "formatAdapter": 1
+  }
+}

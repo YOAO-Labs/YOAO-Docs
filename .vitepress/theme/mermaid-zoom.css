@@ -2,9 +2,9 @@
   position: relative;
   width: 100%;
   margin: 16px 0;
-  border: 1px solid var(--vp-c-border);
-  border-radius: 8px;
-  background: var(--vp-c-bg-soft);
+  border: 1px solid var(--yoao-border);
+  border-radius: var(--yoao-radius);
+  background: var(--yoao-surface-alt);
   overflow: hidden;
   resize: vertical;
   cursor: grab;
@@ -35,12 +35,12 @@
   justify-content: center;
   font-size: 16px;
   line-height: 1;
-  color: var(--vp-c-text-1);
-  background: var(--vp-c-bg);
-  border: 1px solid var(--vp-c-divider);
-  border-radius: 6px;
+  color: var(--yoao-fg);
+  background: var(--yoao-surface);
+  border: 1px solid var(--yoao-border);
+  border-radius: var(--yoao-radius-sm);
   cursor: pointer;
-  opacity: 0.85;
+  opacity: 0.9;
   transition:
     opacity 0.2s,
     background 0.2s,
@@ -49,22 +49,22 @@
 
 .mermaid-zoom-btn:hover {
   opacity: 1;
-  background: var(--vp-c-bg-soft);
-  border-color: var(--vp-c-brand-1);
+  background: var(--yoao-surface-hover);
+  border-color: var(--yoao-accent-border);
 }
 
 .dark .mermaid-zoom {
-  background: #14161f;
-  border-color: rgba(147, 160, 255, 0.25);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+  background: var(--yoao-surface);
+  border-color: var(--yoao-border);
+  box-shadow: var(--yoao-shadow-md);
 }
 
 .dark .mermaid-zoom svg .node rect,
 .dark .mermaid-zoom svg .node circle,
 .dark .mermaid-zoom svg .node polygon,
 .dark .mermaid-zoom svg .node path {
-  fill: #1a1f2e !important;
-  stroke: #7b8bff !important;
+  fill: var(--yoao-surface-alt) !important;
+  stroke: var(--yoao-accent-border) !important;
   stroke-width: 1.5px !important;
 }
 
@@ -72,8 +72,8 @@
 .dark .mermaid-zoom svg text.nodeLabel,
 .dark .mermaid-zoom svg .label text,
 .dark .mermaid-zoom svg .node .label {
-  fill: #f1f5f9 !important;
-  color: #f1f5f9 !important;
+  fill: var(--yoao-fg) !important;
+  color: var(--yoao-fg) !important;
   font-weight: 550 !important;
 }
 
@@ -82,41 +82,41 @@
 .dark .mermaid-zoom svg path.edge-thickness-thick,
 .dark .mermaid-zoom svg path.transition,
 .dark .mermaid-zoom svg .edge-pattern-solid {
-  stroke: #93a0ff !important;
-  stroke-width: 1.8px !important;
+  stroke: var(--yoao-accent) !important;
+  stroke-width: 1.6px !important;
 }
 
 .dark .mermaid-zoom svg marker path {
-  fill: #93a0ff !important;
-  stroke: #93a0ff !important;
+  fill: var(--yoao-accent) !important;
+  stroke: var(--yoao-accent) !important;
 }
 
 .dark .mermaid-zoom svg .edgeLabel {
-  background-color: #14161f !important;
-  color: #cbd5e1 !important;
-  fill: #cbd5e1 !important;
+  background-color: var(--yoao-surface) !important;
+  color: var(--yoao-fg-muted) !important;
+  fill: var(--yoao-fg-muted) !important;
   font-size: 12px !important;
 }
 
 .dark .mermaid-zoom svg .cluster rect {
-  fill: rgba(23, 44, 255, 0.08) !important;
-  stroke: rgba(147, 160, 255, 0.35) !important;
+  fill: var(--yoao-ai-soft) !important;
+  stroke: var(--yoao-ai-border) !important;
   stroke-dasharray: 4 4 !important;
 }
 
 .dark .mermaid-zoom svg .cluster .nodeLabel,
 .dark .mermaid-zoom svg .cluster text {
-  fill: #93a0ff !important;
+  fill: var(--yoao-ai) !important;
   font-weight: 600 !important;
 }
 
 .dark .mermaid-zoom-btn {
-  background: #1e2230;
-  color: #f4f1e8;
-  border-color: rgba(147, 160, 255, 0.25);
+  background: var(--yoao-surface-alt);
+  color: var(--yoao-fg);
+  border-color: var(--yoao-border);
 }
 
 .dark .mermaid-zoom-btn:hover {
-  background: #282f44;
-  border-color: #93a0ff;
+  background: var(--yoao-surface-hover);
+  border-color: var(--yoao-accent-border);
 }

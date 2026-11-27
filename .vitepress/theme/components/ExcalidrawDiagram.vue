@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { withBase } from "vitepress";
+import { Download } from "lucide-vue-next";
 
 const props = defineProps<{
   src: string;
@@ -28,7 +29,8 @@ const downloadName = computed(() => {
     <figcaption>
       <span v-if="caption">{{ caption }}</span>
       <a :href="resolvedSrc" :download="downloadName" :aria-label="`下载可编辑 SVG：${alt}`">
-        下载可编辑 SVG
+        <Download :size="13" aria-hidden="true" />
+        <span>下载可编辑 SVG</span>
       </a>
     </figcaption>
   </figure>
@@ -42,10 +44,10 @@ const downloadName = computed(() => {
 .excalidraw-diagram__frame {
   overflow: hidden;
   padding: 0.75rem;
-  border: 1px solid var(--vp-c-border);
-  border-radius: 10px;
-  background: #fff;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  border: 1px solid var(--yoao-border);
+  border-radius: var(--yoao-radius);
+  background: var(--yoao-paper-white);
+  box-shadow: var(--yoao-shadow-sm);
 }
 
 .excalidraw-diagram__frame img {
@@ -58,23 +60,27 @@ const downloadName = computed(() => {
 
 figcaption {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   flex-wrap: wrap;
   gap: 0.4rem 0.75rem;
   margin-top: 0.55rem;
-  color: var(--vp-c-text-2);
-  font-size: 0.8rem;
+  color: var(--yoao-fg-muted);
+  font-size: 0.8125rem;
   line-height: 1.5;
 }
 
 figcaption a {
   margin-left: auto;
-  color: var(--vp-c-brand-1);
-  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--yoao-accent);
+  font-weight: 550;
   text-decoration: none;
 }
 
 figcaption a:hover {
+  color: var(--yoao-accent-hover);
   text-decoration: underline;
 }
 </style>

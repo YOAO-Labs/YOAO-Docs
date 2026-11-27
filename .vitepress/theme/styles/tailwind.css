@@ -1,0 +1,76 @@
+@import "tailwindcss/theme.css";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme inline {
+  --color-bg: var(--yoao-bg);
+  --color-bg-subtle: var(--yoao-bg-subtle);
+  --color-surface: var(--yoao-surface);
+  --color-surface-alt: var(--yoao-surface-alt);
+  --color-surface-hover: var(--yoao-surface-hover);
+  --color-fg: var(--yoao-fg);
+  --color-fg-muted: var(--yoao-fg-muted);
+  --color-fg-subtle: var(--yoao-fg-subtle);
+  --color-border: var(--yoao-border);
+  --color-border-strong: var(--yoao-border-strong);
+  --color-divider: var(--yoao-divider);
+  --color-rail: var(--yoao-rail);
+  --color-rail-strong: var(--yoao-rail-strong);
+  --color-cross: var(--yoao-cross);
+
+  --color-primary: var(--yoao-primary);
+  --color-primary-hover: var(--yoao-primary-hover);
+  --color-primary-fg: var(--yoao-primary-fg);
+  --color-accent: var(--yoao-accent);
+  --color-accent-hover: var(--yoao-accent-hover);
+  --color-accent-solid: var(--yoao-accent-solid);
+  --color-accent-soft: var(--yoao-accent-soft);
+  --color-accent-border: var(--yoao-accent-border);
+
+  --color-ai: var(--yoao-ai);
+  --color-ai-solid: var(--yoao-ai-solid);
+  --color-ai-soft: var(--yoao-ai-soft);
+  --color-ai-border: var(--yoao-ai-border);
+
+  --color-positive: var(--yoao-positive);
+  --color-positive-solid: var(--yoao-positive-solid);
+  --color-positive-soft: var(--yoao-positive-soft);
+  --color-positive-border: var(--yoao-positive-border);
+
+  --color-caution: var(--yoao-caution);
+  --color-caution-solid: var(--yoao-caution-solid);
+  --color-caution-soft: var(--yoao-caution-soft);
+  --color-caution-border: var(--yoao-caution-border);
+
+  --color-danger: var(--yoao-danger);
+  --color-danger-solid: var(--yoao-danger-solid);
+  --color-danger-soft: var(--yoao-danger-soft);
+  --color-danger-border: var(--yoao-danger-border);
+
+  --color-info: var(--yoao-info);
+  --color-info-solid: var(--yoao-info-solid);
+  --color-info-soft: var(--yoao-info-soft);
+  --color-info-border: var(--yoao-info-border);
+
+  --font-sans: var(--docs-font-sans);
+  --font-mono: var(--docs-font-mono);
+}
+
+:where(.yoao-ui, .yoao-home, .yoao-demo, .yoao-playground),
+:where(.yoao-ui, .yoao-home, .yoao-demo, .yoao-playground) *,
+:where(.yoao-ui, .yoao-home, .yoao-demo, .yoao-playground) ::before,
+:where(.yoao-ui, .yoao-home, .yoao-demo, .yoao-playground) ::after {
+  box-sizing: border-box;
+  border-color: var(--yoao-border);
+  border-style: solid;
+  border-width: 0;
+}
+
+:where(.yoao-ui, .yoao-home, .yoao-demo, .yoao-playground) button {
+  font: inherit;
+  color: inherit;
+  background: transparent;
+  cursor: pointer;
+}
+
+@import "tailwindcss/utilities.css";

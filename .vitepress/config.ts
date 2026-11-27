@@ -1,5 +1,6 @@
 import { defineConfig, type DefaultTheme } from "vitepress";
 import { withMermaid } from "vitepress-plugin-mermaid";
+import tailwindcss from "@tailwindcss/vite";
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -39,7 +40,11 @@ export default withMermaid(
     sitemap: {
       hostname: "https://yoao-labs.github.io/YOAO-Docs/",
       transformItems: (items) =>
-        items.filter((item) => !REDIRECT_PATHS.some((path) => item.url.includes(path))),
+        items.filter(
+          (item) =>
+            !item.url.includes("_components") &&
+            !REDIRECT_PATHS.some((path) => item.url.includes(path)),
+        ),
     },
     ignoreDeadLinks: [
       /^https?:\/\/localhost(:\d+)?(\/|$)/,
@@ -52,6 +57,10 @@ export default withMermaid(
     ],
 
     vite: {
+      plugins: [tailwindcss()],
+      ssr: {
+        noExternal: ["motion-v", "reka-ui", "lucide-vue-next"],
+      },
       resolve: {
         alias: [{ find: /^dayjs\/dayjs\.min\.js$/, replacement: "dayjs/esm/index.js" }],
       },

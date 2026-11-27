@@ -21,6 +21,7 @@ const SKIP_ROOTS = new Set([
 ]);
 const EXEMPT_ROUTES = new Map([
   ["/user-guide/projects/annotation-guide", "legacy URL redirects to the current projects guide"],
+  ["/_components", "internal design system & component playground"],
 ]);
 
 function rewrittenRouteFor(rel) {

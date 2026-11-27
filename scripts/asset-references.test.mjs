@@ -10,22 +10,48 @@ import { collectAssetReferences } from "./asset-references.mjs";
 const DOCS_ROOT = fileURLToPath(new URL("..", import.meta.url));
 const CHECKER = "scripts/check-orphan-images.mjs";
 
-test("collects homepage image imports, local video sources and posters", () => {
+test("collects homepage proof video sources, posters, and image imports", () => {
   const records = collectAssetReferences(DOCS_ROOT);
   const theme = ".vitepress/theme";
-  const hero = `${theme}/components/home/DataAtlasHero.vue`;
   const proof = `${theme}/components/home/ProductProof.vue`;
-  for (const name of ["video-track", "pointcloud", "review", "data-manager"]) {
-    assert.ok(records.get(`${theme}/assets/home/hero/${name}.webp`)?.sources.has(hero), name);
-  }
   for (const name of [
+    "public/home/sam-tools/smart-point.webm",
+    "public/home/sam-tools/smart-point.mp4",
+    "public/home/sam-tools/smart-point-poster.webp",
+    "public/home/sam-tools/smart-box.webm",
+    "public/home/sam-tools/smart-box.mp4",
+    "public/home/sam-tools/smart-box-poster.webp",
     "public/home/ai-assisted-annotation.webm",
     "public/home/ai-assisted-annotation.mp4",
     "public/home/ai-assisted-annotation-poster.webp",
-    "user-guide/images/superadmin/model-market/list.png",
+    "public/home/sam-tools/exemplar.webm",
+    "public/home/sam-tools/exemplar.mp4",
+    "public/home/sam-tools/exemplar-poster.webp",
+    "public/home/ocr-real-scene.webm",
+    "public/home/ocr-real-scene.mp4",
+    "public/home/ocr-real-scene-poster.webp",
+    "public/media/video/workbench-overview.mp4",
+    "public/media/video/workbench-overview-poster.webp",
+    "public/media/video/mask-correction-propagate.mp4",
+    "public/media/video/mask-correction-propagate-poster.webp",
+    "public/media/pointcloud/camera-seed-3d-box.mp4",
+    "public/media/pointcloud/camera-seed-3d-box-poster.webp",
+    "public/media/pointcloud/crossframe-track.mp4",
+    "public/media/pointcloud/crossframe-track-poster.webp",
+    "public/media/review/reject-flow.mp4",
+    "public/media/review/reject-flow-poster.webp",
+    "public/media/discussion/video-issue-resolution.mp4",
+    "public/media/discussion/video-issue-resolution-poster.webp",
+    "public/media/datasets/storage-connector-create-test.mp4",
+    "public/media/datasets/storage-connector-create-test-poster.webp",
+    "public/media/superadmin/model-market/gpu-resources.mp4",
+    "public/media/superadmin/model-market/gpu-resources-poster.webp",
   ]) {
     assert.ok(records.get(name)?.sources.has(proof), name);
   }
+  assert.ok(records.has("user-guide/images/projects/ai-pre-config-panel.png"));
+  assert.ok(!records.get("user-guide/images/projects/ai-pre-config-panel.png")?.sources.has(proof));
+  assert.ok(!records.has("user-guide/images/superadmin/model-market/list.png"));
   assert.ok(records.has("user-guide/images/getting-started/e2e.gif"));
 });
 

@@ -65,20 +65,22 @@ onBeforeUnmount(() => {
 
 <template>
   <figure ref="container" class="docs-video">
-    <video
-      ref="video"
-      :aria-label="alt"
-      :data-source-mounted="sourceMounted"
-      :poster="posterSource"
-      :loop="loop"
-      muted
-      controls
-      playsinline
-      preload="metadata"
-    >
-      <source v-if="sourceMounted" :src="videoSource" type="video/mp4" />
-      {{ alt }}
-    </video>
+    <div class="docs-video-frame">
+      <video
+        ref="video"
+        :aria-label="alt"
+        :data-source-mounted="sourceMounted"
+        :poster="posterSource"
+        :loop="loop"
+        muted
+        controls
+        playsinline
+        preload="metadata"
+      >
+        <source v-if="sourceMounted" :src="videoSource" type="video/mp4" />
+        {{ alt }}
+      </video>
+    </div>
     <figcaption v-if="caption">{{ caption }}</figcaption>
   </figure>
 </template>
@@ -88,20 +90,26 @@ onBeforeUnmount(() => {
   margin: 1.75rem 0;
 }
 
+.docs-video-frame {
+  overflow: hidden;
+  border: 1px solid var(--yoao-border);
+  border-radius: var(--yoao-radius);
+  background: var(--yoao-surface-alt);
+  box-shadow: var(--yoao-shadow-sm);
+}
+
 .docs-video video {
   display: block;
   width: 100%;
   aspect-ratio: 16 / 9;
-  border: 1px solid var(--vp-c-border);
-  border-radius: 8px;
-  background: var(--vp-c-bg-soft);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  border: 0;
+  background: var(--yoao-surface-alt);
 }
 
 .docs-video figcaption {
   margin-top: 0.55rem;
-  color: var(--vp-c-text-2);
-  font-size: 0.8rem;
-  line-height: 1.5;
+  color: var(--yoao-fg-muted);
+  font-size: 0.8125rem;
+  line-height: 1.55;
 }
 </style>

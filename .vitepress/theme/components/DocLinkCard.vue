@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { withBase } from "vitepress";
+import { ArrowUpRight } from "lucide-vue-next";
 
 const props = defineProps<{
   icon?: string;
@@ -16,7 +17,7 @@ const resolved = computed(() => (external.value ? props.href : withBase(props.hr
 
 <template>
   <a
-    class="doc-link-card"
+    class="doc-link-card group"
     :href="resolved"
     :target="external ? '_blank' : undefined"
     :rel="external ? 'noreferrer' : undefined"
@@ -29,7 +30,7 @@ const resolved = computed(() => (external.value ? props.href : withBase(props.hr
       </span>
       <span v-if="desc" class="dlc-desc">{{ desc }}</span>
     </span>
-    <span class="dlc-arrow" aria-hidden="true">→</span>
+    <ArrowUpRight class="dlc-arrow" :size="16" aria-hidden="true" />
   </a>
 </template>
 
@@ -39,22 +40,24 @@ const resolved = computed(() => (external.value ? props.href : withBase(props.hr
   align-items: flex-start;
   gap: 12px;
   height: 100%;
-  padding: 20px;
-  border: 1px solid var(--vp-c-border);
-  border-radius: var(--docs-radius, 8px);
-  background: var(--vp-c-bg-elv);
+  padding: 17px 18px;
+  border: 1px solid var(--yoao-border);
+  border-radius: var(--yoao-radius);
+  background: var(--yoao-surface);
   text-decoration: none !important;
-  color: var(--vp-c-text-1);
+  color: var(--yoao-fg);
   transition:
-    border-color 0.22s ease,
-    background-color 0.22s ease;
+    border-color 0.18s ease,
+    background-color 0.18s ease,
+    box-shadow 0.18s ease;
 }
 .doc-link-card:hover {
-  border-color: var(--vp-c-brand-1);
-  background: var(--vp-c-brand-soft);
+  border-color: var(--yoao-border-strong);
+  background: var(--yoao-surface-alt);
+  box-shadow: var(--yoao-shadow-sm);
 }
 .dlc-icon {
-  font-size: 22px;
+  font-size: 20px;
   line-height: 1.2;
   flex-shrink: 0;
 }
@@ -66,33 +69,41 @@ const resolved = computed(() => (external.value ? props.href : withBase(props.hr
 }
 .dlc-title {
   font-weight: 600;
-  font-size: 15px;
-  color: var(--vp-c-text-1);
+  font-size: 14.5px;
+  line-height: 1.4;
+  color: var(--yoao-fg);
   display: inline-flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
 }
 .dlc-badge {
-  font-size: 11px;
+  font-family: var(--docs-font-mono);
+  font-size: 10.5px;
   font-weight: 500;
   padding: 1px 7px;
-  border-radius: 999px;
-  background: var(--vp-c-brand-soft);
-  color: var(--vp-c-brand-1);
+  border-radius: 9999px;
+  border: 1px solid var(--yoao-accent-border);
+  background: var(--yoao-accent-soft);
+  color: var(--yoao-accent);
 }
 .dlc-desc {
-  font-size: 14px;
-  line-height: 1.6;
-  color: var(--vp-c-text-2);
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--yoao-fg-muted);
 }
 .dlc-arrow {
   margin-left: auto;
-  align-self: center;
-  color: var(--vp-c-text-3);
-  transition: color 0.22s ease;
+  flex-shrink: 0;
+  align-self: flex-start;
+  margin-top: 2px;
+  color: var(--yoao-fg-subtle);
+  transition:
+    color 0.18s ease,
+    transform 0.18s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .doc-link-card:hover .dlc-arrow {
-  color: var(--vp-c-brand-1);
+  color: var(--yoao-accent);
+  transform: translate(2px, -2px);
 }
 </style>

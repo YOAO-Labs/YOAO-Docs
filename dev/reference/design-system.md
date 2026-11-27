@@ -197,30 +197,38 @@ pnpm --filter web lint
 
 ## 文档站设计令牌（VitePress）
 
-文档站（`docs-site`）运行在 VitePress 默认主题之上，**不引入** Web 应用的 `shadcn.css`。文档站采用独立的双层令牌体系，使品牌着陆页与正文阅读页在共享同一品牌色源的同时，拥有各自克制的色彩浓度、排版与动效节奏：
+文档站（`docs-site`）运行在 VitePress 1.6 与 Vue 3.5 之上，**不引入** Web 应用的 `shadcn.css` 或 React 运行时依赖，而是在样式语义与图标家族上与主仓保持一致。样式底层采用 **Tailwind CSS v4**（仅导入 `theme.css` 与 `utilities.css`，禁用 Preflight 以保护 `.vp-doc` 正文排版）+ **`@radix-ui/colors`**（`slate` 中性色阶、Alpha 框线与 `indigo` / `violet` / `jade` / `amber` / `ruby` / `sky` 语义阶梯），交互与图标层采用 **`reka-ui`**、**`motion-v`** 与 **`lucide-vue-next`**。
 
-| 层级         | 样式文件                          | 作用范围                                     | 视觉特征                                                                                      |
-| ------------ | --------------------------------- | -------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| 阅读层（L1） | `.vitepress/theme/docs-theme.css` | 全部正文页面（user-guide / dev / ops / api） | 雾白/墨黑中性表面、皇家蓝链接、中文舒适阅读行高，将 `--docs-*` 映射至 VitePress `--vp-*` 变量 |
-| 品牌展示层   | `.vitepress/theme/docs-home.css`  | 仅限首页品牌组件                             | 高饱和皇家蓝 / 纸白 / 墨黑 / 酸性绿 + 衬线展示字体（`--home-*`），绝不覆盖正文阅读层令牌      |
+全站采用统一的克制视觉语言，首页与正文阅读页共享同一套语义令牌，不再在首页使用独立的高饱和海报色板：
 
-- **共享品牌色源**：两层均派生自皇家蓝 `#172cff`。首页将其用于大面积品牌背景，正文页则收敛为 `--vp-c-brand-1`（链接与激活态）。酸性绿 `--home-acid` 仅限首页 AI/标注节点装饰使用，严禁进入正文阅读页。
-- **暗色模式选择器**：VitePress 通过切换 `html.dark`（而非 Web 应用的 `data-theme`）控制暗色模式，因此 `docs-theme.css` 中的暗色覆盖统一使用 `.dark` 选择器，并将皇家蓝提亮至 `#93a0ff` 以保证墨黑背景下的链接对比度。
-- **纯本地字体栈**：`--docs-font-sans`、`--docs-font-mono` 与 `--docs-font-serif` 均为纯系统/本地字体栈，文档站严禁注入 Google Fonts 等运行时外部网络字体。
+| 层级       | 样式文件                                 | 作用范围                       | 职责说明                                                                                       |
+| ---------- | ---------------------------------------- | ------------------------------ | ---------------------------------------------------------------------------------------------- |
+| 令牌真值层 | `.vitepress/theme/styles/tokens.css`     | 全站（首页、阅读页、演示组件） | 引入 `@radix-ui/colors`，定义 `--yoao-*` 语义色板、主题强调块与 `--vp-*` 映射                  |
+| 工具类层   | `.vitepress/theme/styles/tailwind.css`   | 首页、演示组件与预览页         | 注册 `@theme inline` 语义工具类与 `.yoao-ui` 作用域基础规则，跳过 Preflight                    |
+| 阅读层     | `.vitepress/theme/docs-theme.css`        | 全部正文阅读页与导览页         | 控制 256px 侧栏、760px 正文、1040px 导览容器、表格滚影、代码块与图片灯箱，消费 `--yoao-*` 令牌 |
+| 首页壳层   | `.vitepress/theme/docs-home.css`         | 仅限首页容器与微动效关键帧     | 负责全宽页容器重置、半透明顶栏磨砂与轻量 SVG 脉冲关键帧                                        |
+| 图表适配层 | `.vitepress/theme/mermaid-zoom.css`      | Mermaid 缩放容器               | 明暗主题下的节点、连线与缩放按钮颜色，消费 `--yoao-*` 令牌                                     |
+
+- **主题强调预留（Theme Plugin Ready）**：`.vitepress/theme/styles/tokens.css` 顶部将品牌主按钮（`--yoao-primary*`）、链接强调色（`--yoao-accent*`）与签名渐变（`--yoao-signature-gradient`）收口到单独的 Theme Accent Block，主仓未来完成主题插件化重构时只需在一个位置替换。
+- **语义对齐**：AI 候选与交互提示统一使用 `violet`（`--yoao-ai*`），状态反馈复用 `jade`（`--yoao-positive*`）、`amber`（`--yoao-caution*`）、`ruby`（`--yoao-danger*`）与 `sky`（`--yoao-info*`）。
+- **代码化交互演示套件**：`.vitepress/theme/components/demo/` 提供 `DemoFrame`、`DemoSkeleton`（骨架 UI 降噪）与 `DemoCursor`，配合 `FrameSection` 与 `DotFieldCanvas` 支撑首页交互工作台和正文流程模拟演示；`ProductProof.vue` 保留真实产品视频与截图。
+- **暗色模式选择器**：VitePress 通过 `html.dark` 切换暗色模式，与 `@radix-ui/colors` 暗色样式表的 `.dark` 选择器及 Tailwind `@custom-variant dark` 直接对齐。
+- **纯本地字体栈**：`--docs-font-sans` 与 `--docs-font-mono` 均为纯系统/本地字体栈，严禁注入运行时外部网络字体。
+- **内部组件字典与门禁**：内部预览页 `/_components`（`ComponentsPlayground.vue`，已从导航覆盖与 sitemap 排除）集中展示实时明暗令牌、Frame Rails 与全部交互演示组件；修改 `.vitepress/theme/` 后运行 `pnpm check:tokens` 拦截除 `tokens.css` / `tailwind.css` 之外的硬编码 `#hex` 与 `rgb()` 色值。
 
 <span id="documentation-reading-layout" aria-hidden="true"></span>
 
 ### 文档阅读版式（Reading Layout）
 
-`DocsLayout.vue` 通过 VitePress 默认主题的公开插槽扩展阅读体验，在正文标题上方注入所属文档域链接与文档类型标签：
+`DocsLayout.vue` 通过 VitePress 默认主题的公开插槽扩展阅读体验，在正文标题上方注入所属文档域链接与文档类型标签，并挂载导航栏品牌图标右键快捷菜单（`BrandLogoMenu.vue`）：
 
 | 版式要素   | 阅读层设计规格                                                                                 |
 | ---------- | ---------------------------------------------------------------------------------------------- |
-| 左侧导航栏 | 桌面端宽 `256px`；按任务分组、原生当前分支展开，采用蓝色高亮文本与柔和激活背景                 |
+| 左侧导航栏 | 桌面端宽 `256px`；按任务分组、原生当前分支展开，采用 `--yoao-accent` 高亮文本与柔和激活背景    |
 | 正文容器   | `--docs-reading-width: 760px`；单栏连续阅读流，宽表格与代码块在局部容器内横向滚动              |
-| 右侧大纲栏 | `--docs-outline-width: 200px`；展示 `H2`/`H3` 层级、支持长标题换行与原生当前章节指示条         |
+| 右侧大纲栏 | `--docs-outline-width: 200px`；展示 `H2`/`H3` 层级、支持长标题换行与平滑过渡章节指示条         |
 | 栏目导览页 | `pageClass: docs-hub-page` 且 `aside: false`；宽 `1040px`，任务入口卡片置于参考索引之前        |
-| 标题与正文 | 本地衬线 `H1`（桌面 `40px` / 移动 `32px`）；无衬线 `H2`/`H3`（`26px`/`20px`）；正文 `16px/1.8` |
-| 表面与圆角 | 扁平阅读画布；选中态使用 `--docs-radius-sm: 4px`，卡片/媒体/代码块使用 `--docs-radius: 8px`    |
+| 标题与正文 | 本地无衬线 `H1`（桌面 `34px` / 移动 `28px`）；`H2`/`H3`（`22px`/`18px`）；正文 `16px/1.78`     |
+| 表面与圆角 | 扁平阅读画布与细线边框；小控件圆角 `--yoao-radius-sm`（`6px`），卡片/媒体 `--yoao-radius`（`10px`） |
 
 顶部菜单与桌面侧边栏在 `960px` 断点启用，右侧目录大纲在 `1280px` 断点启用。修改阅读层 CSS 后，请使用 `scripts/check-reading-layout.mjs` 捕获并校验历史锚点、正文计算宽度及亮/暗主题表现（详见[编写与维护文档](../how-to/write-documentation)）。

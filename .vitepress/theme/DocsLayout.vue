@@ -2,6 +2,7 @@
 import { computed } from "vue";
 import { useData, withBase } from "vitepress";
 import DefaultTheme from "vitepress/theme";
+import BrandLogoMenu from "./components/BrandLogoMenu.vue";
 
 const { page, frontmatter } = useData();
 const { Layout } = DefaultTheme;
@@ -48,6 +49,9 @@ const kind = computed(() =>
           <span class="doc-kind">{{ kind }}</span>
         </template>
       </nav>
+    </template>
+    <template #layout-bottom>
+      <BrandLogoMenu />
     </template>
   </Layout>
 </template>

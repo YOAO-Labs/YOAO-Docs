@@ -46,4 +46,4 @@ node scripts/check-orphan-images.mjs --strict
 pnpm build
 ```
 
-文件和引用检查不能代替本地预览；验证实际页面的媒体位置、可读性和播放。若明确要求更新首页 Hero **静态卡片**，可用 `pnpm media:home-hero --asset <id>` 将核对过的源图转换为 WebP；该命令不操作浏览器。
+文件和引用检查不能代替本地预览；验证实际页面的媒体位置、可读性和播放。首页 Hero 现采用代码驱动的交互工作台模拟组件（`WorkbenchHeroDemo.vue`），首页实机证明区域（`ProductProof.vue`）继续引用 `public/home/**` 中的视频与封面。
